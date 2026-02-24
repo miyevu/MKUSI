@@ -15,9 +15,37 @@ import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ReplayIcon from '@mui/icons-material/Replay';
 
 // --- DATA CONSTANTS ---
+interface CategoryItem {
+  name: string;
+  icon: React.ReactNode;
+  image: string;
+}
+
+interface FeatureItem {
+  icon: React.ElementType; 
+  title: string;
+  desc: string;
+}
+
+interface ProductItem {
+  id: number;
+  category: "CASES" | "STRAPS" | "MAGSAFE" | string; // Strict but allows future growth
+  name: string;
+  price: string;
+  img: string;
+  badge: "HOT" | "NEW" | "SOLD OUT" | ""; // Strict badge types
+}
+
+interface BlogPostItem {
+  id: number;
+  title: string;
+  date: string;
+  image: string;
+}
 
 // 1. Categories for Circles
-const CATEGORIES = [
+// const CATEGORIES = [
+const CATEGORIES: CategoryItem[] = [
   { name: 'Cases', icon: <PhoneIphoneIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?auto=format&fit=crop&w=200&q=60' },
   { name: 'MagSafe', icon: <BatteryChargingFullIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1616348436168-de43ad0db179?auto=format&fit=crop&w=200&q=60' },
   { name: 'Cables', icon: <CableIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?auto=format&fit=crop&w=200&q=60' },
@@ -27,7 +55,8 @@ const CATEGORIES = [
 ];
 
 // 1. Create a simple data array
-const FEATURES = [
+// const FEATURES = [
+const FEATURES: FeatureItem[] = [
   {
     icon: LocalShippingIcon,
     title: "Fast Delivery",
@@ -45,8 +74,23 @@ const FEATURES = [
   }
 ];
 
+interface BentoItem {
+  subtitle: string;
+  title: React.ReactNode;
+  btnText: string;
+  btnVariant: "text" | "contained" | "outlined";
+  btnClass: string;
+  imgSrc: string;
+  imgAlt: string;
+  imgClass: string;
+  textWrapperClass?: string;
+  justify: string;
+  link: string;
+}
+
 // 1. Define the data array
-const BENTO_ITEMS = [
+// const BENTO_ITEMS = [
+const BENTO_ITEMS: BentoItem[] = [
   {
     subtitle: "Something new",
     title: <Typography variant="h4" className="font-black text-slate-900 mb-6 leading-none">Cases for<br/>Phone</Typography>,
@@ -104,7 +148,8 @@ const BENTO_ITEMS = [
 ];
 
 // 2. Products Data for "New Arrivals" Tab Logic
-const NEW_ARRIVALS_DATA = [
+// const NEW_ARRIVALS_DATA = [
+const NEW_ARRIVALS_DATA: ProductItem[] = [
   // CASES
   { id: 1, category: 'CASES', name: 'iPhone 15 Pro Max Case', price: 'GH₵ 150.00', img: 'https://images.unsplash.com/photo-1603313011101-320f26a4f6f6?auto=format&fit=crop&w=500&q=80', badge: 'HOT' },
   { id: 2, category: 'CASES', name: 'Silicone Case - Blue', price: 'GH₵ 120.00', img: 'https://images.unsplash.com/photo-1603313011101-320f26a4f6f6?auto=format&fit=crop&w=500&q=80', badge: '' },
@@ -302,8 +347,8 @@ export default function HomePage() {
                   {item.title}
                   
                   <Button 
-                    component={Link}           // Treats the MUI Button exactly like a Next.js <Link>
-                    href={item.link}           // Pulls the unique URL from the array
+                    component={Link}
+                    href={item.link}
                     variant={item.btnVariant} 
                     className={item.btnClass}
                   >
