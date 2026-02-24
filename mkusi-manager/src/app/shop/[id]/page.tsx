@@ -149,7 +149,7 @@ export default function ProductPage() {
         </Grid>
       </Container>
 
-      <Container maxWidth="xl py-6">
+      <Container maxWidth="xl">
         <Divider className="mb-4" />
         {/* Information Toggles */}
         <Box className="space-y-2 pt-6">
@@ -195,7 +195,7 @@ export default function ProductPage() {
 
           <Grid container spacing={{ xs: 2, md: 4 }}>
             {RELATED_PRODUCTS.map((product) => (
-              <Grid key={product.id} size={{ xs: 6, md: 3 }}>
+              <Grid key={product.id} size={{ xs: 6, md: 3, lg: 2 }}>
                 {/* We wrap the card in a subtle hover-lift effect container */}
                 <Box className="transition-all duration-300 hover:-translate-y-2">
                   <ProductCard 
@@ -225,7 +225,7 @@ export default function ProductPage() {
             >
               
               {/* Desktop/Tablet: Show Product Info */}
-              <Stack direction="row" spacing={3} alignItems="center" sx={{ display: { xs: 'none', sm: 'flex' }, max_width: '50%' }}>
+              <Stack direction="row" spacing={3} alignItems="center" sx={{ display: { xs: 'none', sm: 'flex' }, maxWidth: '50%' }}>
                 <Box className="w-12 h-12 bg-slate-50 rounded-lg overflow-hidden shrink-0 border border-slate-100">
                   <img src={PRODUCT_DATA.images[0]} className="w-full h-full object-contain" alt="mini-thumb" />
                 </Box>
