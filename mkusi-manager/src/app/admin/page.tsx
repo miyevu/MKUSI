@@ -231,7 +231,7 @@ export default function AdminDashboard() {
                 series={[{ data: chartData, color: '#1e293b' }]}
                 height={350}
                 margin={{ top: 10, bottom: 30, left: 40, right: 10 }}
-                hideLegend // <-- The new v8 way to hide the legend
+                hideLegend 
                 borderRadius={8}
               />
             </Box>
