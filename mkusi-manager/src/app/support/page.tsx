@@ -46,7 +46,7 @@ export default function SupportPage() {
         <Grid container spacing={6}>
           
           {/* 1. FAQ SECTION */}
-          <Grid item xs={12} md={7}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Typography variant="h5" className="font-black text-slate-900 mb-6 flex items-center gap-2">
               <HelpOutlineIcon className="text-blue-600" /> Frequently Asked Questions
             </Typography>
@@ -63,7 +63,7 @@ export default function SupportPage() {
           </Grid>
 
           {/* 2. CONTACT & FORM SECTION */}
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Stack spacing={4}>
               {/* Contact Info Card */}
               <Paper elevation={0} className="p-6 rounded-[2rem] border border-slate-100 bg-white">

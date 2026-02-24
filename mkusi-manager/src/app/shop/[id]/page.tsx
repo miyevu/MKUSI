@@ -28,11 +28,18 @@ const PRODUCT_DATA = {
 };
 
 const RELATED_PRODUCTS = [
-  { id: 101, name: 'MagSafe Battery Pack', price: 850, category: 'Accessories', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500' },
-  { id: 102, name: 'Fast Charger 20W', price: 120, category: 'Charger', image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500' },
-  { id: 103, name: 'Drou Watch Ultra', price: 450, category: 'Accessories', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500' },
-  { id: 104, name: 'JBL Go 3 Speaker', price: 480, category: 'Mini Speakers', image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500' },
+  { id: 101, name: 'MagSafe Battery Pack', price: 850, stock: 15, category: 'Accessories', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500' },
+  { id: 102, name: 'Fast Charger 20W', price: 120, stock: 50, category: 'Charger', image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500' },
+  { id: 103, name: 'Drou Watch Ultra', price: 450, stock: 8, category: 'Accessories', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500' },
+  { id: 104, name: 'JBL Go 3 Speaker', price: 480, stock: 22, category: 'Mini Speakers', image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500' },
 ];
+
+// const RELATED_PRODUCTS = [
+//   { id: 101, name: 'MagSafe Battery Pack', price: 850, category: 'Accessories', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500' },
+//   { id: 102, name: 'Fast Charger 20W', price: 120, category: 'Charger', image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500' },
+//   { id: 103, name: 'Drou Watch Ultra', price: 450, category: 'Accessories', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500' },
+//   { id: 104, name: 'JBL Go 3 Speaker', price: 480, category: 'Mini Speakers', image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500' },
+// ];
 
 export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);

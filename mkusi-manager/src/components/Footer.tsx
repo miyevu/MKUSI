@@ -66,7 +66,7 @@ export default function Footer() {
         <Grid container spacing={8}>
           
           {/* Brand Column */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md:4 }}>
             <Box className="mb-4 flex items-center gap-2">
               <Box className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-black text-white">M</Box>
               <Typography variant="h5" className="font-black text-white tracking-tight">MKUSI</Typography>
@@ -100,7 +100,7 @@ export default function Footer() {
           </Grid>
 
           {/* Links Column 1 */}
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid size={{ xs: 6, sm: 4, md: 2 }}>
             <Typography className="font-bold text-white mb-6 uppercase tracking-wider text-sm pb-2">Shop</Typography>
             <Stack spacing={2}>
               {['All Products', 'New Arrivals', 'Best Sellers', 'Flash Sales', 'Gift Cards'].map(item => (
@@ -112,7 +112,7 @@ export default function Footer() {
           </Grid>
 
           {/* Links Column 2 */}
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid size={{ xs: 6, sm: 4, md: 2 }}>
             <Typography className="font-bold text-white mb-6 uppercase tracking-wider text-sm pb-2">Support</Typography>
             <Stack spacing={2}>
               {['Help Center', 'Shipping Info', 'Returns & Exchange', 'Warranty', 'Contact Us'].map(item => (
@@ -124,7 +124,7 @@ export default function Footer() {
           </Grid>
 
           {/* Contact Column */}
-          <Grid item xs={12} sm={4} md={4}>
+          <Grid size={{ xs: 12, sm: 4, md: 4 }}>
             <Typography className="font-bold text-white mb-6 uppercase tracking-wider text-sm pb-2">Contact</Typography>
             <Stack spacing={3}>
               <Box className="flex gap-3">
