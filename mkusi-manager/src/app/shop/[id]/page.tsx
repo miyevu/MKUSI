@@ -75,7 +75,7 @@ export default function ProductPage() {
               <Box className="flex-1 bg-slate-50 rounded-3xl overflow-hidden aspect-[4.5/5] flex row items-center justify-center p-10 border border-slate-100">
                 <img src={PRODUCT_DATA.images[activeImg]} className="w-full h-full object-contain mix-blend-multiply" alt="main" />
               </Box>
-              <Stack direction="row" spacing={2} sx={{ display: { xs: 'none', md: 'flex' } }}>
+              <Stack direction="row" spacing={2} sx={{ display: { xs: 'flex', md: 'flex' } }}>
                 {PRODUCT_DATA.images.map((img, i) => (
                   <Box 
                     key={i}
