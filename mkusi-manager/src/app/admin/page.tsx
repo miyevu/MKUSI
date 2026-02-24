@@ -36,7 +36,6 @@ export default function AdminDashboard() {
   const xLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
-    {/* Kept 'fade-in' class assuming it's a global CSS animation */}
     <Container maxWidth="xl" className="fade-in" sx={{ py: 6 }}>
       
       {/* Header */}
