@@ -81,7 +81,7 @@ export default function Footer() {
                 { icon: <FacebookIcon />, url: "https://facebook.com/yourprofile" },
                 { 
                   icon: <WhatsAppIcon />, 
-                  url: "https://wa.me/233594214922?text=Hi%20I%20want%20to%20make%20enquiries%20on%20" 
+                  url: "https://wa.me/233543391481?text=Hi%20I%20want%20to%20make%20enquiries%20on%20" 
                 },
               ].map((social, i) => (
                 <IconButton 

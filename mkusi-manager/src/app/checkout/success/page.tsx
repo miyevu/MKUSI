@@ -37,7 +37,7 @@ export default function SuccessPage() {
   }, []);
 
   const sendWhatsApp = () => {
-    const managerNumber = "233594214922"; // Replace with your actual WhatsApp number
+    const managerNumber = "233543391481"; // Replace with your actual WhatsApp number
     const message = `Hello MKUSI Team! 👋%0A%0AI just placed an order for some accessories and wanted to confirm my delivery.%0A%0A*Order ID:* ${orderId}%0A*Name:* ${name}%0A%0AThank you!`;
     window.open(`https://wa.me/${managerNumber}?text=${message}`, '_blank');
   };
