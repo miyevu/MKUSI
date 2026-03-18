@@ -169,7 +169,8 @@ const NEW_ARRIVALS_DATA: ProductItem[] = [
   { id: 12, category: 'MAGSAFE', name: 'Belkin 3-in-1', price: 'GH₵ 850.00', img: 'https://images.unsplash.com/photo-1592910793526-7243306bc86a?auto=format&fit=crop&w=500&q=80', badge: '' },
 ];
 
-const BLOG_POSTS = [
+// const BLOG_POSTS = [
+const BLOG_POSTS: BlogPostItem[] = [
   { id: 1, title: 'Exploring modern MagSafe homes', date: '22 APR', image: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?auto=format&fit=crop&w=400&q=80' },
   { id: 2, title: 'Green interior design inspiration', date: '25 MAY', image: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?auto=format&fit=crop&w=400&q=80' },
   { id: 3, title: 'Reinterpreting the classic bookshelf', date: '12 JUN', image: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?auto=format&fit=crop&w=400&q=80' },

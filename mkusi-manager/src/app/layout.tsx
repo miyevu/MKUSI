@@ -11,8 +11,10 @@ const inter = Inter({ subsets: ["latin"] });
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      {/* Add suppressHydrationWarning here 👇 */}
-      <body className={inter.className} suppressHydrationWarning={true}>
+      <body 
+        className={`${inter.className} max-w-full md:overflow-x-clip`} 
+        suppressHydrationWarning={true}
+      >
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <ProductProvider>

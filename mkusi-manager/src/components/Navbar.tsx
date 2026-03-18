@@ -6,16 +6,25 @@ import {
   ListItemButton, ListItemIcon, Collapse, Button, Chip
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+
+// --- ICONS ---
 import SearchIcon from '@mui/icons-material/Search';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import MenuIcon from '@mui/icons-material/Menu';
 import StorefrontIcon from '@mui/icons-material/Storefront';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
+import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
+import SmartphoneIcon from '@mui/icons-material/Smartphone'; // <-- New icon for iPhones
+import CableIcon from '@mui/icons-material/Cable';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import FacebookIcon from '@mui/icons-material/Facebook';
+import TwitterIcon from '@mui/icons-material/Twitter';
+
 import Link from 'next/link';
 import CartItem from '@/components/CartItem';
 import { useProducts } from '@/context/ProductContext';
@@ -54,7 +63,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-// --- MOCK CART DATA (Replace with Cart Context later) ---
+// --- MOCK CART DATA ---
 const MOCK_CART_ITEMS = [
   { id: 1, name: "15000mAh Solar Power Bank", price: 510.00, quantity: 1, image: "https://images.unsplash.com/photo-1619441207978-3d326c46e2c9?w=200" },
   { id: 2, name: "MagSafe Silicone Case", price: 150.00, quantity: 2, image: "https://images.unsplash.com/photo-1603313011101-320f26a4f6f6?w=200" }
@@ -65,8 +74,6 @@ export default function Navbar() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false); 
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  
-  // --- CART STATE ---
   const [cartOpen, setCartOpen] = useState(false);
   
   const searchRef = useRef<HTMLDivElement>(null);
@@ -78,9 +85,7 @@ export default function Navbar() {
   ).slice(0, 5);
 
   const handleSearchEntered = () => {
-    if (mobileInputRef.current) {
-      mobileInputRef.current.focus();
-    }
+    if (mobileInputRef.current) mobileInputRef.current.focus();
   };
 
   useEffect(() => {
@@ -158,18 +163,6 @@ export default function Navbar() {
                                   ₵{product.price.toFixed(2)}
                                 </Typography>
                               </Box>
-                              
-                              <Stack direction="row" alignItems="center" spacing={1.5}>
-                                <Box className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest shrink-0 ${
-                                  product.stock !== 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
-                                }`}>
-                                  {product.stock !== 0 ? "In Stock" : "Sold Out"}
-                                </Box>
-                                <ArrowForwardIosIcon 
-                                  className="text-slate-300 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" 
-                                  sx={{ fontSize: 12 }} 
-                                />
-                              </Stack>
                             </ListItemButton>
                           ))}
                         </List>
@@ -195,17 +188,6 @@ export default function Navbar() {
                         <Typography className="text-slate-500 text-sm mb-6 max-w-[250px]">
                           We couldn't find anything for "{globalSearch}".
                         </Typography>
-                        {/* <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" useFlexGap>
-                          <Typography className="text-xs font-bold text-slate-400 w-full mb-2">TRY SEARCHING FOR</Typography>
-                          {['Cases', 'Chargers', 'Power Banks'].map(term => (
-                            <Chip 
-                              key={term} 
-                              label={term} 
-                              onClick={() => setGlobalSearch(term)}
-                              className="bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-xs cursor-pointer border border-slate-200"
-                            />
-                          ))}
-                        </Stack> */}
                       </Box>
                     )}
                   </Paper>
@@ -247,69 +229,6 @@ export default function Navbar() {
                   type="search"
                 />
               </SearchContainer>
-
-              {/* Mobile Search Dropdown */}
-              {globalSearch && (
-                <Paper 
-                  elevation={0}
-                  className="absolute top-[calc(100%+8px)] left-2 right-2 max-h-[400px] overflow-y-auto rounded-[1.5rem] border border-slate-200 shadow-2xl bg-white/95 backdrop-blur-xl z-50 p-2"
-                >
-                  {liveResults.length > 0 ? (
-                    <>
-                      <List className="p-0">
-                        {liveResults.map((product) => (
-                          <ListItemButton 
-                            key={product.id} 
-                            onClick={() => handleResultClick(product.id)}
-                            className="rounded-2xl mb-1 hover:bg-slate-50 transition-colors p-2 flex items-center gap-3"
-                          >
-                            <Box className="w-12 h-12 bg-white rounded-xl shrink-0 border border-slate-100 p-1">
-                              <img src={product.image} alt={product.name} className="w-full h-full object-contain mix-blend-multiply" />
-                            </Box>
-                            <Box className="flex-1">
-                              <Typography className="font-bold text-slate-900 text-sm line-clamp-1">
-                                {product.name}
-                              </Typography>
-                              <Typography className="font-black text-blue-600 text-xs mt-0.5">
-                                ₵{product.price.toFixed(2)}
-                              </Typography>
-                            </Box>
-                            <Box className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest shrink-0 ${
-                              product.stock !== 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
-                            }`}>
-                              {product.stock !== 0 ? "In Stock" : "Sold Out"}
-                            </Box>
-                          </ListItemButton>
-                        ))}
-                      </List>
-                      <Button 
-                        fullWidth 
-                        className="mt-1 text-slate-500 font-bold normal-case text-sm bg-slate-50 hover:bg-slate-100 rounded-xl py-3"
-                        onClick={() => {
-                          setIsMobileSearchOpen(false);
-                          router.push(`/shop?search=${globalSearch}`);
-                        }}
-                      >
-                        See all results
-                      </Button>
-                    </>
-                  ) : (
-                    <Box className="py-10 px-4 text-center">
-                      <SearchIcon className="text-slate-200 mb-2" sx={{ fontSize: 40 }} />
-                      <Typography className="font-bold text-slate-900 text-sm mb-1">No results</Typography>
-                      <Typography className="text-slate-500 text-xs mb-4">No accessories match "{globalSearch}"</Typography>
-                      <Button 
-                        size="small"
-                        variant="outlined" 
-                        className="rounded-lg text-slate-500 border-slate-200 font-bold normal-case"
-                        onClick={() => setGlobalSearch('')}
-                      >
-                        Clear Search
-                      </Button>
-                    </Box>
-                  )}
-                </Paper>
-              )}
             </Box>
           </Collapse>
         </Toolbar>
@@ -322,56 +241,79 @@ export default function Navbar() {
         onClose={() => setMobileOpen(false)}
         PaperProps={{ sx: { width: '85%', maxWidth: '320px', padding: '24px' } }}
       >
-        <Box className="flex flex-col h-full">
-          <Box className="flex justify-between items-center mb-8">
-            <Typography variant="h5" className="font-black text-blue-600 tracking-tighter">MKUSI</Typography>
-            <IconButton onClick={() => setMobileOpen(false)} className="bg-slate-50 rounded-xl">
-              <CloseIcon />
-            </IconButton>
+        <Box className="flex flex-col h-full justify-between">
+          
+          <Box>
+            {/* Header */}
+            <Box className="flex justify-between items-center mb-6">
+              <Typography variant="h5" className="font-black text-blue-600 tracking-tighter">MKUSI</Typography>
+              <IconButton onClick={() => setMobileOpen(false)} className="bg-slate-50 rounded-xl">
+                <CloseIcon />
+              </IconButton>
+            </Box>
+
+            {/* MAIN NAVIGATION (TOP) */}
+            <List className="p-0">
+              <Link href="/shop" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
+                <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-3 px-2 border-b border-slate-100">
+                  <ListItemIcon className="min-w-[40px]"><StorefrontIcon className="text-blue-600" /></ListItemIcon>
+                  <ListItemText primary="Shop All" primaryTypographyProps={{ className: 'font-bold text-slate-800' }} />
+                </ListItemButton>
+              </Link>
+
+              {/* Added iPhones Category */}
+              <Link href="/shop?category=iphones" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
+                <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-3 px-2 border-b border-slate-100">
+                  <ListItemIcon className="min-w-[40px]"><SmartphoneIcon className="text-blue-600" /></ListItemIcon>
+                  <ListItemText primary="iPhones" primaryTypographyProps={{ className: 'font-bold text-slate-800' }} />
+                </ListItemButton>
+              </Link>
+
+              <Link href="/shop?category=powerbanks" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
+                <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-3 px-2 border-b border-slate-100">
+                  <ListItemIcon className="min-w-[40px]"><BatteryChargingFullIcon className="text-blue-600" /></ListItemIcon>
+                  <ListItemText primary="Power Banks" primaryTypographyProps={{ className: 'font-bold text-slate-800' }} />
+                </ListItemButton>
+              </Link>
+
+              <Link href="/shop?category=cases" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
+                <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-3 px-2 border-b border-slate-100">
+                  <ListItemIcon className="min-w-[40px]"><PhoneIphoneIcon className="text-blue-600" /></ListItemIcon>
+                  <ListItemText primary="Cases & Covers" primaryTypographyProps={{ className: 'font-bold text-slate-800' }} />
+                </ListItemButton>
+              </Link>
+
+              <Link href="/shop?category=chargers" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
+                <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-3 px-2 border-b border-slate-100">
+                  <ListItemIcon className="min-w-[40px]"><CableIcon className="text-blue-600" /></ListItemIcon>
+                  <ListItemText primary="Chargers & Cables" primaryTypographyProps={{ className: 'font-bold text-slate-800' }} />
+                </ListItemButton>
+              </Link>
+            </List>
           </Box>
 
-          <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-1">
-            Navigation
-          </Typography>
+          {/* ACCOUNT, ADMIN & SOCIALS (BOTTOM) */}
+          <Box className="pt-4 mt-auto">
+            <List className="p-0 mb-4">
+              <Link href="/profile" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
+                <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-2.5 px-2">
+                  <ListItemIcon className="min-w-[36px]"><AccountCircleIcon fontSize="small" className="text-slate-500" /></ListItemIcon>
+                  <ListItemText primary="My Account" primaryTypographyProps={{ className: 'font-bold text-sm text-slate-600 uppercase tracking-wide' }} />
+                </ListItemButton>
+              </Link>
 
-          <List className="p-0">
-            <Link href="/shop" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
-              <ListItemButton className="rounded-2xl mb-2 hover:bg-slate-50 py-3">
-                <ListItemIcon className="min-w-[40px]"><StorefrontIcon className="text-blue-600" /></ListItemIcon>
-                <ListItemText primary="Shop" primaryTypographyProps={{ className: 'font-bold text-slate-800' }} />
-              </ListItemButton>
-            </Link>
-
-            <Link href="/support" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
-              <ListItemButton className="rounded-2xl mb-2 hover:bg-slate-50 py-3">
-                <ListItemIcon className="min-w-[40px]"><SupportAgentIcon className="text-blue-600" /></ListItemIcon>
-                <ListItemText primary="Support" primaryTypographyProps={{ className: 'font-bold text-slate-800' }} />
-              </ListItemButton>
-            </Link>
-
-            <Divider className="my-4 opacity-50 border-dashed" />
-
-            <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-1">
-              Account & Admin
-            </Typography>
-
-            <Link href="/profile" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
-              <ListItemButton className="rounded-2xl mb-2 hover:bg-slate-50 py-3">
-                <ListItemIcon className="min-w-[40px]"><AccountCircleIcon className="text-slate-400" /></ListItemIcon>
-                <ListItemText primary="My Profile" primaryTypographyProps={{ className: 'font-bold text-slate-500' }} />
-              </ListItemButton>
-            </Link>
-
-            <Link href="/admin" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
-              <ListItemButton className="rounded-2xl mb-2 hover:bg-slate-50 py-3">
-                <ListItemIcon className="min-w-[40px]"><AdminPanelSettingsIcon className="text-slate-400" /></ListItemIcon>
-                <ListItemText primary="Admin Dashboard" primaryTypographyProps={{ className: 'font-bold text-slate-500' }} />
-              </ListItemButton>
-            </Link>
-          </List>
+              <Link href="/profile?tab=wishlist" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
+                <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-2.5 px-2">
+                  <ListItemIcon className="min-w-[36px]"><FavoriteBorderIcon fontSize="small" className="text-slate-500" /></ListItemIcon>
+                  <ListItemText primary="Wishlist" primaryTypographyProps={{ className: 'font-bold text-sm text-slate-600 uppercase tracking-wide' }} />
+                </ListItemButton>
+              </Link>
+            </List>
+          </Box>
         </Box>
       </Drawer>
 
+      {/* --- SHOPPING CART DRAWER --- */}
       {/* --- SHOPPING CART DRAWER --- */}
       <Drawer
         anchor="right"
@@ -380,99 +322,74 @@ export default function Navbar() {
         PaperProps={{ sx: { width: '100%', maxWidth: '450px', backgroundColor: '#fafafa' } }}
       >
         <Box className="flex flex-col h-full">
-          
-          {/* Cart Header */}
+          {/* Drawer Header */}
           <Box className="px-6 py-5 bg-white border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
-            <Typography variant="h5" className="font-black text-slate-900 tracking-tight">
-              Your Cart ({MOCK_CART_ITEMS.length})
-            </Typography>
-            <IconButton onClick={() => setCartOpen(false)} className="bg-slate-50 hover:bg-slate-100 rounded-xl">
-              <CloseIcon />
-            </IconButton>
+            <Typography variant="h5" className="font-black text-slate-900 tracking-tight">Your Cart ({MOCK_CART_ITEMS.length})</Typography>
+            <IconButton onClick={() => setCartOpen(false)} className="bg-slate-50 hover:bg-slate-100 rounded-xl"><CloseIcon /></IconButton>
           </Box>
 
-          {/* Cart Items List */}
-          <Box 
-            className="flex-1 overflow-y-auto p-6"
-            sx={{
-              '&::-webkit-scrollbar': { width: '6px' },
-              '&::-webkit-scrollbar-track': { backgroundColor: '#f8fafc', borderRadius: '10px' },
-              '&::-webkit-scrollbar-thumb': { 
-                backgroundColor: '#cbd5e1', 
-                borderRadius: '10px', 
-                transition: 'background-color 0.2s',
-                '&:hover': { backgroundColor: '#94a3b8' },
-              },
-            }}
-          >
+          {/* Drawer Body (Items) */}
+          <Box className="flex-1 overflow-y-auto p-6" sx={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: '10px'} }}>
             {MOCK_CART_ITEMS.length === 0 ? (
               <Box className="h-full flex flex-col items-center justify-center text-center">
                 <ShoppingCartIcon sx={{ fontSize: 80 }} className="text-slate-200 mb-4" />
                 <Typography variant="h6" className="font-black text-slate-900 mb-2">Your cart is empty</Typography>
-                <Typography className="text-slate-500 mb-6">Looks like you haven't added anything yet.</Typography>
-                <Button variant="contained" className="bg-blue-600 font-bold px-8 py-3 rounded-xl normal-case shadow-none" onClick={() => {setCartOpen(false); router.push('/shop');}}>
-                  Continue Shopping
-                </Button>
+                <Button variant="contained" className="bg-blue-600 font-bold px-8 py-3 rounded-xl normal-case" onClick={() => {setCartOpen(false); router.push('/shop');}}>Continue Shopping</Button>
               </Box>
             ) : (
-              <Stack spacing={4}>
-                {MOCK_CART_ITEMS.map((item) => (
-                  <CartItem 
-                    key={item.id} 
-                    item={item} 
-                  />
-                ))}
-              </Stack>
+              <Stack spacing={4}>{MOCK_CART_ITEMS.map((item) => (<CartItem key={item.id} item={item} />))}</Stack>
             )}
           </Box>
 
-          {/* Cart Footer / Checkout Area */}
+          {/* Drawer Footer (Summary & Buttons) */}
           {MOCK_CART_ITEMS.length > 0 && (
-            <Box className="px-6 py-3 bg-white border-t border-slate-100">
-              <Accordion 
-                elevation={0} 
-                disableGutters
-                className="before:hidden bg-transparent flex flex-col-reverse"
-              >
-                <AccordionSummary 
-                  expandIcon={<ExpandMoreIcon className="text-slate-900" />} 
-                  className="px-2 hover:bg-slate-50 transition-colors rounded-lg border-t border-slate-100"
-                >
+            <Box className="px-6 py-4 bg-white border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+              <Accordion elevation={0} disableGutters className="before:hidden bg-transparent flex flex-col-reverse mb-2">
+                <AccordionSummary expandIcon={<ExpandMoreIcon className="text-slate-900" />} className="px-2 border-t border-slate-100">
                   <Box className="flex justify-between items-center w-full pr-4">
                     <Typography className="font-black text-lg text-slate-900">Total</Typography>
                     <Typography className="font-black text-xl text-blue-600">₵{cartSubtotal.toFixed(2)}</Typography>
                   </Box>
                 </AccordionSummary>
-                
-                <AccordionDetails className="px-2 pb-0 pt-0 text-slate-500 text-sm leading-relaxed">
+                <AccordionDetails className="px-2 pb-0 pt-0 text-slate-500 text-sm">
                   <Stack spacing={2}>
-                    <Box className="flex justify-between items-center text-slate-500">
-                      <Typography className="font-bold text-sm">Subtotal</Typography>
-                      <Typography className="font-bold text-sm">₵{cartSubtotal.toFixed(2)}</Typography>
-                    </Box>
-                    <Box className="flex justify-between items-center text-slate-500">
-                      <Typography className="font-bold text-sm">Shipping</Typography>
-                      <Typography className="font-bold text-sm uppercase text-[10px] tracking-wider">Calculated at checkout</Typography>
-                    </Box>
+                    <Box className="flex justify-between"><Typography className="font-bold text-sm">Subtotal</Typography><Typography className="font-bold text-sm">₵{cartSubtotal.toFixed(2)}</Typography></Box>
+                    <Box className="flex justify-between"><Typography className="font-bold text-sm">Shipping</Typography><Typography className="font-bold text-sm uppercase text-[10px]">Calculated at checkout</Typography></Box>
                     <Divider/>
                   </Stack>
                 </AccordionDetails>
               </Accordion>
               
-              <Button 
-                variant="contained" 
-                fullWidth 
-                className="bg-slate-900 hover:bg-blue-600 text-white py-4 rounded-xl font-black text-base tracking-wide normal-case shadow-none transition-colors"
-                onClick={() => {
-                  setCartOpen(false);
-                  router.push('/checkout');
-                }}
-              >
-                Proceed to Checkout
-              </Button>
+              {/* NEW: Stacked Buttons for Checkout and View Cart */}
+              <Stack spacing={2}>
+                {/* Primary Action */}
+                <Button 
+                  variant="contained" 
+                  fullWidth 
+                  className="bg-slate-900 hover:bg-blue-600 text-white py-3.5 rounded-xl font-black text-base normal-case shadow-none transition-colors" 
+                  onClick={() => {
+                    setCartOpen(false); 
+                    router.push('/checkout');
+                  }}
+                >
+                  Proceed to Checkout
+                </Button>
+
+                {/* Secondary Action: View Cart */}
+                <Button 
+                  variant="outlined" 
+                  fullWidth 
+                  className="border-slate-200 text-slate-900 hover:bg-slate-50 hover:border-slate-300 py-3 rounded-xl font-bold text-sm normal-case shadow-none transition-colors" 
+                  onClick={() => {
+                    setCartOpen(false); 
+                    router.push('/cart'); // Routes to the new Cart Page we just built
+                  }}
+                >
+                  View Full Cart
+                </Button>
+              </Stack>
             </Box>
           )}
-
         </Box>
       </Drawer>
     </>
