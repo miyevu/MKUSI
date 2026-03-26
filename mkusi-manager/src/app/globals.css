@@ -24,3 +24,35 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 1. Prevent Layout Shift */
+html {
+  /* This modern CSS tells the browser to always reserve space for the scrollbar, 
+     so the page NEVER jumps when it appears/disappears! */
+  scrollbar-gutter: stable; 
+}
+
+/* 2. Premium Slim Scrollbar (Webkit for Chrome/Safari/Edge) */
+::-webkit-scrollbar {
+  width: 6px; /* Makes vertical scrollbar very slim */
+  height: 6px; /* Makes horizontal scrollbars slim */
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; /* Hides the ugly grey background */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* A nice, subtle slate-300 color */
+  border-radius: 20px; /* Makes the scrollbar perfectly round like an iPhone */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8; /* Darkens to slate-400 when hovered */
+}
+
+/* For Firefox compatibility */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
