@@ -37,7 +37,7 @@ const TABS = [
   { id: 'account',       label: 'Account',        icon: PersonRoundedIcon },
   { id: 'notifications', label: 'Notifications',  icon: NotificationsRoundedIcon },
   { id: 'security',      label: 'Security',       icon: LockRoundedIcon },
-  { id: 'danger',        label: 'Danger Zone',    icon: DeleteOutlineRoundedIcon },
+  { id: 'danger',        label: 'Delete',    icon: DeleteOutlineRoundedIcon },
 ];
 
 const NOTIFICATION_ITEMS = [
