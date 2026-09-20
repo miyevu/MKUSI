@@ -71,9 +71,15 @@ export default function CheckoutPage() {
   const totalAmount = subtotal - promoDiscount + storeSettings.deliveryFee;
 
   const validatePhone = (phone: string) => {
-    if (phone.length > 0 && phone.length < 10) {
-      return "Phone number must be 10 digits";
+    if (phone.length === 0) return "";
+    if (phone.length < 10) return "Phone number must be 10 digits";
+    
+    // Ghana mobile numbers start with 0, followed by 2, 5, or a few other valid leading digits
+    const ghanaPhoneRegex = /^0[2-9]\d{8}$/;
+    if (!ghanaPhoneRegex.test(phone)) {
+      return "Enter a valid Ghana phone number (e.g. 054XXXXXXX)";
     }
+    
     return "";
   };
 
