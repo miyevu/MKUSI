@@ -8,21 +8,19 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
 import LocalMallOutlinedIcon from '@mui/icons-material/LocalMallOutlined';
 import CheckIcon from '@mui/icons-material/Check';
+import Link from 'next/link';
 
 export default function SuccessPage() {
   const router = useRouter();
   
-  // State to hold the securely retrieved data
   const [orderId, setOrderId] = useState<string | null>(null);
   const [name, setName] = useState<string>('there');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // 1. Grab the hidden data from sessionStorage when the page loads
     const storedId = sessionStorage.getItem('mkusi_order_id');
     const storedName = sessionStorage.getItem('mkusi_customer_name');
 
-    // 2. If it exists, set it. If not, generate a fallback.
     if (storedId) {
       setOrderId(storedId);
     } else {
@@ -37,7 +35,7 @@ export default function SuccessPage() {
   }, []);
 
   const sendWhatsApp = () => {
-    const managerNumber = "233543391481"; // Replace with your actual WhatsApp number
+    const managerNumber = "233543391481";
     const message = `Hello MKUSI Team! 👋%0A%0AI just placed an order for some accessories and wanted to confirm my delivery.%0A%0A*Order ID:* ${orderId}%0A*Name:* ${name}%0A%0AThank you!`;
     window.open(`https://wa.me/${managerNumber}?text=${message}`, '_blank');
   };
@@ -50,7 +48,6 @@ export default function SuccessPage() {
     }
   };
 
-  // Show a clean loading state for a split second while grabbing the session data
   if (!orderId) {
     return (
       <main className="bg-[#fafafa] min-h-screen flex items-center justify-center">
@@ -120,6 +117,14 @@ export default function SuccessPage() {
               )}
             </Button>
           </Stack>
+
+          <Typography className="text-slate-400 text-xs mt-4 text-center">
+            Save this ID —{' '}
+            <Link href="/track-order" className="text-blue-600 font-bold underline">
+              track your order anytime
+            </Link>
+            {' '}using it and your phone number.
+          </Typography>
         </Paper>
 
         {/* VIP WhatsApp Fast-Track Card */}
@@ -160,7 +165,6 @@ export default function SuccessPage() {
           startIcon={<KeyboardBackspaceIcon />}
           className="text-slate-500 font-bold hover:bg-slate-50 py-3 px-6 rounded-xl normal-case transition-colors"
           onClick={() => {
-            // Optional: Clear the session storage so they don't see the same receipt if they somehow click back
             sessionStorage.removeItem('mkusi_order_id');
             sessionStorage.removeItem('mkusi_customer_name');
             router.push('/shop');

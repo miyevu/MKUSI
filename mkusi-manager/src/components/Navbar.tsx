@@ -2,8 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   AppBar, Accordion, AccordionDetails, AccordionSummary, Toolbar, Typography, InputBase, Box, Badge, IconButton, 
-  Paper, List, ListItem, ListItemText, Divider, Stack, Drawer, 
-  ListItemButton, ListItemIcon, Collapse, Button, Chip
+  Paper, List, ListItemButton, Divider, Stack, Drawer, 
+  ListItemIcon, Collapse, Button, Menu, MenuItem, ListItemIcon as MenuItemIcon
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
@@ -15,20 +15,22 @@ import MenuIcon from '@mui/icons-material/Menu';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import CloseIcon from '@mui/icons-material/Close';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
 import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
-import SmartphoneIcon from '@mui/icons-material/Smartphone'; // <-- New icon for iPhones
+import SmartphoneIcon from '@mui/icons-material/Smartphone';
 import CableIcon from '@mui/icons-material/Cable';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import FacebookIcon from '@mui/icons-material/Facebook';
-import TwitterIcon from '@mui/icons-material/Twitter';
+import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import LoginRoundedIcon from '@mui/icons-material/LoginRounded';
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
+import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 
 import Link from 'next/link';
 import CartItem from '@/components/CartItem';
 import { useProducts } from '@/context/ProductContext';
+import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { searchProducts } from '@/lib/search';
 
 // --- STYLED COMPONENTS ---
 const SearchContainer = styled('div')(({ theme }) => ({
@@ -63,26 +65,32 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-// --- MOCK CART DATA ---
-const MOCK_CART_ITEMS = [
-  { id: 1, name: "15000mAh Solar Power Bank", price: 510.00, quantity: 1, image: "https://images.unsplash.com/photo-1619441207978-3d326c46e2c9?w=200" },
-  { id: 2, name: "MagSafe Silicone Case", price: 150.00, quantity: 2, image: "https://images.unsplash.com/photo-1603313011101-320f26a4f6f6?w=200" }
-];
-
 export default function Navbar() {
-  const { products, globalSearch, setGlobalSearch } = useProducts();
+  const { products, cartItems, updateCartQty, removeFromCart, globalSearch, setGlobalSearch } = useProducts();
+  const { currentUser, logout } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false); 
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [accountMenuAnchor, setAccountMenuAnchor] = useState<null | HTMLElement>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   
   const searchRef = useRef<HTMLDivElement>(null);
   const mobileInputRef = useRef<HTMLInputElement>(null); 
   const router = useRouter();
 
-  const liveResults = products.filter(p => 
-    globalSearch && p.name.toLowerCase().includes(globalSearch.toLowerCase())
-  ).slice(0, 5);
+  // Debounce: wait 200ms after the last keystroke before filtering
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(globalSearch), 200);
+    return () => clearTimeout(handle);
+  }, [globalSearch]);
+
+  const liveResults = searchProducts(products, debouncedSearch).slice(0, 5);
+
+  useEffect(() => {
+    setHighlightedIndex(-1);
+  }, [debouncedSearch]);
 
   const handleSearchEntered = () => {
     if (mobileInputRef.current) mobileInputRef.current.focus();
@@ -105,7 +113,71 @@ export default function Navbar() {
     router.push(`/shop/${id}`); 
   };
 
-  const cartSubtotal = MOCK_CART_ITEMS.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const handleViewAllResults = () => {
+    setShowDropdown(false);
+    router.push(`/shop?search=${encodeURIComponent(globalSearch)}`);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (!showDropdown || liveResults.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex(prev => (prev + 1) % liveResults.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex(prev => (prev - 1 + liveResults.length) % liveResults.length);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (highlightedIndex >= 0 && highlightedIndex < liveResults.length) {
+        handleResultClick(liveResults[highlightedIndex].id);
+      } else {
+        handleViewAllResults();
+      }
+    } else if (e.key === 'Escape') {
+      setShowDropdown(false);
+    }
+  };
+
+  const resolvedCartItems = cartItems
+    .map(item => {
+      const product = products.find(p => p.id === item.productId);
+      if (!product) return null;
+      return {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: item.quantity,
+        image: product.image,
+      };
+    })
+    .filter((item): item is { id: number; name: string; price: number; quantity: number; image: string } => item !== null);
+
+  const cartCount = resolvedCartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const cartSubtotal = resolvedCartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  const handleAccountIconClick = (e: React.MouseEvent<HTMLElement>) => {
+    setAccountMenuAnchor(e.currentTarget);
+  };
+
+  const closeAccountMenu = () => setAccountMenuAnchor(null);
+
+  const handleGoToProfile = () => {
+    closeAccountMenu();
+    router.push(currentUser?.isAdmin ? '/admin' : '/profile');
+  };
+
+  const handleGoToAuth = () => {
+    closeAccountMenu();
+    router.push('/auth');
+  };
+
+  const handleLogout = async () => {
+    closeAccountMenu();
+    await logout();
+    setMobileOpen(false);
+    router.push('/auth');
+  };
 
   return (
     <>
@@ -130,11 +202,11 @@ export default function Navbar() {
                     value={globalSearch}
                     onChange={(e) => { setGlobalSearch(e.target.value); setShowDropdown(true); }}
                     onFocus={() => setShowDropdown(true)}
+                    onKeyDown={handleSearchKeyDown}
                   />
                 </SearchContainer>
                 
-                {/* Desktop Search Dropdown */}
-                {showDropdown && globalSearch && (
+                {showDropdown && debouncedSearch && (
                   <Paper 
                     elevation={0}
                     className="absolute top-[calc(100%+12px)] left-0 right-0 max-h-[480px] overflow-y-auto rounded-[2rem] border border-slate-200/80 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] bg-white/95 backdrop-blur-xl z-50 p-3"
@@ -145,19 +217,23 @@ export default function Navbar() {
                           Top Matches
                         </Typography>
                         <List className="p-0">
-                          {liveResults.map((product) => (
+                          {liveResults.map((product, index) => (
                             <ListItemButton 
                               key={product.id} 
                               onClick={() => handleResultClick(product.id)}
-                              className="rounded-2xl mb-1 hover:bg-slate-50 transition-all duration-300 group p-2.5 flex items-center gap-4"
+                              onMouseEnter={() => setHighlightedIndex(index)}
+                              className={`rounded-2xl mb-1 transition-all duration-300 group p-2.5 flex items-center gap-4 ${index === highlightedIndex ? 'bg-slate-50' : 'hover:bg-slate-50'}`}
                             >
                               <Box className="w-14 h-14 bg-white shadow-sm rounded-xl shrink-0 border border-slate-100 p-1.5 transition-transform group-hover:scale-105">
-                                <img src={product.image} alt={product.name} className="w-full h-full object-contain mix-blend-multiply" />
+                                <img src={product.image || 'https://via.placeholder.com/100'} alt={product.name} className="w-full h-full object-contain mix-blend-multiply" />
                               </Box>
                               
                               <Box className="flex-1">
                                 <Typography className="font-bold text-slate-900 text-sm line-clamp-1 group-hover:text-blue-600 transition-colors">
                                   {product.name}
+                                </Typography>
+                                <Typography className="text-slate-400 text-[11px] font-medium">
+                                  {product.category}{product.brand ? ` · ${product.brand}` : ''}
                                 </Typography>
                                 <Typography className="font-black text-blue-600 text-xs mt-0.5">
                                   ₵{product.price.toFixed(2)}
@@ -170,10 +246,7 @@ export default function Navbar() {
                           <Button 
                             fullWidth 
                             className="text-slate-500 font-bold normal-case text-sm hover:text-blue-600 hover:bg-blue-50 rounded-xl py-3 transition-colors"
-                            onClick={() => {
-                              setShowDropdown(false);
-                              router.push(`/shop?search=${globalSearch}`);
-                            }}
+                            onClick={handleViewAllResults}
                           >
                             View all results for "{globalSearch}"
                           </Button>
@@ -201,11 +274,84 @@ export default function Navbar() {
                 <IconButton onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)} sx={{ display: { xs: 'flex', md: 'none' } }}>
                   {isMobileSearchOpen ? <CloseIcon /> : <SearchIcon />}
                 </IconButton>
-                <IconButton onClick={() => router.push('/profile')} sx={{ display: { xs: 'none', sm: 'flex' } }}>
-                  <AccountCircleIcon />
+
+                <IconButton
+                  onClick={handleAccountIconClick}
+                  sx={{ display: { xs: 'none', sm: 'flex' } }}
+                >
+                  {currentUser?.isAdmin
+                    ? <AdminPanelSettingsOutlinedIcon />
+                    : <AccountCircleIcon className={currentUser ? 'text-blue-600' : ''} />}
                 </IconButton>
+
+                <Menu
+                  anchorEl={accountMenuAnchor}
+                  open={Boolean(accountMenuAnchor)}
+                  onClose={closeAccountMenu}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  PaperProps={{
+                    sx: {
+                      mt: 1.5,
+                      borderRadius: '16px',
+                      minWidth: 240,
+                      border: '1px solid #f1f5f9',
+                      boxShadow: '0 20px 40px -15px rgba(0,0,0,0.15)',
+                    },
+                  }}
+                >
+                  {currentUser ? [
+                    <Box key="header" className="px-4 pt-3 pb-2 border-b border-slate-100 mb-1">
+                      <Typography className="font-bold text-slate-900 text-sm truncate">
+                        {currentUser.isAdmin ? 'Manager' : `${currentUser.firstName} ${currentUser.lastName}`.trim() || 'Account'}
+                      </Typography>
+                      <Typography className="text-slate-400 text-xs truncate">
+                        {currentUser.email}
+                      </Typography>
+                    </Box>,
+                    <MenuItem key="profile" onClick={handleGoToProfile} sx={{ py: 1.2, px: 2, gap: 1.5 }}>
+                      <MenuItemIcon sx={{ minWidth: 'unset' }}>
+                        {currentUser.isAdmin
+                          ? <DashboardOutlinedIcon fontSize="small" className="text-slate-500" />
+                          : <PersonOutlineRoundedIcon fontSize="small" className="text-slate-500" />}
+                      </MenuItemIcon>
+                      <Typography className="font-semibold text-sm text-slate-700">
+                        {currentUser.isAdmin ? 'Admin Dashboard' : 'Profile'}
+                      </Typography>
+                    </MenuItem>,
+                    <MenuItem key="logout" onClick={handleLogout} sx={{ py: 1.2, px: 2, gap: 1.5 }}>
+                      <MenuItemIcon sx={{ minWidth: 'unset' }}>
+                        <LogoutRoundedIcon fontSize="small" className="text-red-500" />
+                      </MenuItemIcon>
+                      <Typography className="font-semibold text-sm text-red-500">
+                        Log Out
+                      </Typography>
+                    </MenuItem>
+                  ] : (
+                    <Box key="signed-out" className="px-4 py-3">
+                      <Box className="flex items-center gap-2 mb-1">
+                        <AccountCircleIcon fontSize="small" className="text-slate-300" />
+                        <Typography className="font-bold text-slate-900 text-sm">
+                          You're not signed in
+                        </Typography>
+                      </Box>
+                      <Typography className="text-slate-400 text-xs mb-3">
+                        Sign in to view your orders, wishlist, and profile.
+                      </Typography>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        onClick={handleGoToAuth}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold normal-case text-xs rounded-xl py-2 shadow-none"
+                      >
+                        Sign In / Create Account
+                      </Button>
+                    </Box>
+                  )}
+                </Menu>
+
                 <IconButton onClick={() => setCartOpen(true)}>
-                  <Badge badgeContent={MOCK_CART_ITEMS.length} color="primary">
+                  <Badge badgeContent={cartCount} color="primary">
                     <ShoppingCartIcon />
                   </Badge>
                 </IconButton>
@@ -226,6 +372,7 @@ export default function Navbar() {
                   placeholder="Search MKUSI store..."
                   value={globalSearch}
                   onChange={(e) => setGlobalSearch(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { handleViewAllResults(); } }}
                   type="search"
                 />
               </SearchContainer>
@@ -244,7 +391,6 @@ export default function Navbar() {
         <Box className="flex flex-col h-full justify-between">
           
           <Box>
-            {/* Header */}
             <Box className="flex justify-between items-center mb-6">
               <Typography variant="h5" className="font-black text-blue-600 tracking-tighter">MKUSI</Typography>
               <IconButton onClick={() => setMobileOpen(false)} className="bg-slate-50 rounded-xl">
@@ -252,68 +398,93 @@ export default function Navbar() {
               </IconButton>
             </Box>
 
-            {/* MAIN NAVIGATION (TOP) */}
+            {currentUser ? (
+              <Box className="mb-4 p-3 bg-blue-50 rounded-xl">
+                <Typography className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-0.5">
+                  {currentUser.isAdmin ? 'Admin' : 'Signed in as'}
+                </Typography>
+                <Typography className="font-bold text-slate-900 text-sm truncate">
+                  {currentUser.isAdmin ? 'Manager' : `${currentUser.firstName} ${currentUser.lastName}`.trim() || currentUser.email}
+                </Typography>
+              </Box>
+            ) : (
+              <Box className="mb-4 p-3 bg-slate-50 rounded-xl">
+                <Typography className="font-bold text-slate-900 text-sm">
+                  You're not signed in
+                </Typography>
+                <Typography className="text-slate-400 text-xs mt-0.5">
+                  Sign in to view your orders and wishlist.
+                </Typography>
+              </Box>
+            )}
+
             <List className="p-0">
               <Link href="/shop" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
                 <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-3 px-2 border-b border-slate-100">
                   <ListItemIcon className="min-w-[40px]"><StorefrontIcon className="text-blue-600" /></ListItemIcon>
-                  <ListItemText primary="Shop All" primaryTypographyProps={{ className: 'font-bold text-slate-800' }} />
+                  <Typography className="font-bold text-slate-800">Shop All</Typography>
                 </ListItemButton>
               </Link>
 
-              {/* Added iPhones Category */}
-              <Link href="/shop?category=iphones" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
-                <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-3 px-2 border-b border-slate-100">
-                  <ListItemIcon className="min-w-[40px]"><SmartphoneIcon className="text-blue-600" /></ListItemIcon>
-                  <ListItemText primary="iPhones" primaryTypographyProps={{ className: 'font-bold text-slate-800' }} />
-                </ListItemButton>
-              </Link>
-
-              <Link href="/shop?category=powerbanks" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
-                <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-3 px-2 border-b border-slate-100">
-                  <ListItemIcon className="min-w-[40px]"><BatteryChargingFullIcon className="text-blue-600" /></ListItemIcon>
-                  <ListItemText primary="Power Banks" primaryTypographyProps={{ className: 'font-bold text-slate-800' }} />
-                </ListItemButton>
-              </Link>
-
-              <Link href="/shop?category=cases" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
+              <Link href="/shop?cat=Phone%20Cases" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
                 <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-3 px-2 border-b border-slate-100">
                   <ListItemIcon className="min-w-[40px]"><PhoneIphoneIcon className="text-blue-600" /></ListItemIcon>
-                  <ListItemText primary="Cases & Covers" primaryTypographyProps={{ className: 'font-bold text-slate-800' }} />
+                  <Typography className="font-bold text-slate-800">Cases & Covers</Typography>
                 </ListItemButton>
               </Link>
 
-              <Link href="/shop?category=chargers" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
+              <Link href="/shop?cat=Chargers" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
+                <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-3 px-2 border-b border-slate-100">
+                  <ListItemIcon className="min-w-[40px]"><BatteryChargingFullIcon className="text-blue-600" /></ListItemIcon>
+                  <Typography className="font-bold text-slate-800">Chargers</Typography>
+                </ListItemButton>
+              </Link>
+
+              <Link href="/shop?cat=Cables" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
                 <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-3 px-2 border-b border-slate-100">
                   <ListItemIcon className="min-w-[40px]"><CableIcon className="text-blue-600" /></ListItemIcon>
-                  <ListItemText primary="Chargers & Cables" primaryTypographyProps={{ className: 'font-bold text-slate-800' }} />
+                  <Typography className="font-bold text-slate-800">Cables</Typography>
+                </ListItemButton>
+              </Link>
+
+              <Link href="/shop?cat=Audio" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
+                <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-3 px-2 border-b border-slate-100">
+                  <ListItemIcon className="min-w-[40px]"><SmartphoneIcon className="text-blue-600" /></ListItemIcon>
+                  <Typography className="font-bold text-slate-800">Audio</Typography>
                 </ListItemButton>
               </Link>
             </List>
           </Box>
 
-          {/* ACCOUNT, ADMIN & SOCIALS (BOTTOM) */}
           <Box className="pt-4 mt-auto">
             <List className="p-0 mb-4">
-              <Link href="/profile" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
-                <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-2.5 px-2">
-                  <ListItemIcon className="min-w-[36px]"><AccountCircleIcon fontSize="small" className="text-slate-500" /></ListItemIcon>
-                  <ListItemText primary="My Account" primaryTypographyProps={{ className: 'font-bold text-sm text-slate-600 uppercase tracking-wide' }} />
-                </ListItemButton>
-              </Link>
+              {currentUser && !currentUser.isAdmin && (
+                <Link href="/profile" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
+                  <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-2.5 px-2">
+                    <ListItemIcon className="min-w-[36px]"><AccountCircleIcon fontSize="small" className="text-slate-500" /></ListItemIcon>
+                    <Typography className="font-bold text-sm text-slate-600 uppercase tracking-wide">My Account</Typography>
+                  </ListItemButton>
+                </Link>
+              )}
 
-              <Link href="/profile?tab=wishlist" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
-                <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-2.5 px-2">
-                  <ListItemIcon className="min-w-[36px]"><FavoriteBorderIcon fontSize="small" className="text-slate-500" /></ListItemIcon>
-                  <ListItemText primary="Wishlist" primaryTypographyProps={{ className: 'font-bold text-sm text-slate-600 uppercase tracking-wide' }} />
+              {currentUser ? (
+                <ListItemButton onClick={handleLogout} className="rounded-xl mb-1 hover:bg-red-50 py-2.5 px-2">
+                  <ListItemIcon className="min-w-[36px]"><LogoutRoundedIcon fontSize="small" className="text-red-500" /></ListItemIcon>
+                  <Typography className="font-bold text-sm text-red-500 uppercase tracking-wide">Log Out</Typography>
                 </ListItemButton>
-              </Link>
+              ) : (
+                <Link href="/auth" className="no-underline text-inherit" onClick={() => setMobileOpen(false)}>
+                  <ListItemButton className="rounded-xl mb-1 hover:bg-slate-50 py-2.5 px-2">
+                    <ListItemIcon className="min-w-[36px]"><LoginRoundedIcon fontSize="small" className="text-slate-500" /></ListItemIcon>
+                    <Typography className="font-bold text-sm text-slate-600 uppercase tracking-wide">Sign In / Create Account</Typography>
+                  </ListItemButton>
+                </Link>
+              )}
             </List>
           </Box>
         </Box>
       </Drawer>
 
-      {/* --- SHOPPING CART DRAWER --- */}
       {/* --- SHOPPING CART DRAWER --- */}
       <Drawer
         anchor="right"
@@ -322,27 +493,34 @@ export default function Navbar() {
         PaperProps={{ sx: { width: '100%', maxWidth: '450px', backgroundColor: '#fafafa' } }}
       >
         <Box className="flex flex-col h-full">
-          {/* Drawer Header */}
           <Box className="px-6 py-5 bg-white border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
-            <Typography variant="h5" className="font-black text-slate-900 tracking-tight">Your Cart ({MOCK_CART_ITEMS.length})</Typography>
+            <Typography variant="h5" className="font-black text-slate-900 tracking-tight">Your Cart ({cartCount})</Typography>
             <IconButton onClick={() => setCartOpen(false)} className="bg-slate-50 hover:bg-slate-100 rounded-xl"><CloseIcon /></IconButton>
           </Box>
 
-          {/* Drawer Body (Items) */}
           <Box className="flex-1 overflow-y-auto p-6" sx={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: '10px'} }}>
-            {MOCK_CART_ITEMS.length === 0 ? (
+            {resolvedCartItems.length === 0 ? (
               <Box className="h-full flex flex-col items-center justify-center text-center">
                 <ShoppingCartIcon sx={{ fontSize: 80 }} className="text-slate-200 mb-4" />
                 <Typography variant="h6" className="font-black text-slate-900 mb-2">Your cart is empty</Typography>
                 <Button variant="contained" className="bg-blue-600 font-bold px-8 py-3 rounded-xl normal-case" onClick={() => {setCartOpen(false); router.push('/shop');}}>Continue Shopping</Button>
               </Box>
             ) : (
-              <Stack spacing={4}>{MOCK_CART_ITEMS.map((item) => (<CartItem key={item.id} item={item} />))}</Stack>
+              <Stack spacing={4}>
+                {resolvedCartItems.map((item) => (
+                  <CartItem
+                    key={item.id}
+                    item={item}
+                    onIncrease={() => updateCartQty(item.id, 1)}
+                    onDecrease={() => updateCartQty(item.id, -1)}
+                    onRemove={() => removeFromCart(item.id)}
+                  />
+                ))}
+              </Stack>
             )}
           </Box>
 
-          {/* Drawer Footer (Summary & Buttons) */}
-          {MOCK_CART_ITEMS.length > 0 && (
+          {resolvedCartItems.length > 0 && (
             <Box className="px-6 py-4 bg-white border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
               <Accordion elevation={0} disableGutters className="before:hidden bg-transparent flex flex-col-reverse mb-2">
                 <AccordionSummary expandIcon={<ExpandMoreIcon className="text-slate-900" />} className="px-2 border-t border-slate-100">
@@ -360,9 +538,7 @@ export default function Navbar() {
                 </AccordionDetails>
               </Accordion>
               
-              {/* NEW: Stacked Buttons for Checkout and View Cart */}
               <Stack spacing={2}>
-                {/* Primary Action */}
                 <Button 
                   variant="contained" 
                   fullWidth 
@@ -375,14 +551,13 @@ export default function Navbar() {
                   Proceed to Checkout
                 </Button>
 
-                {/* Secondary Action: View Cart */}
                 <Button 
                   variant="outlined" 
                   fullWidth 
                   className="border-slate-200 text-slate-900 hover:bg-slate-50 hover:border-slate-300 py-3 rounded-xl font-bold text-sm normal-case shadow-none transition-colors" 
                   onClick={() => {
                     setCartOpen(false); 
-                    router.push('/cart'); // Routes to the new Cart Page we just built
+                    router.push('/cart');
                   }}
                 >
                   View Full Cart

@@ -1,15 +1,24 @@
 'use client';
-import React, { useState } from 'react';
-import { Typography, Box, Avatar, Button, Stack, TextField } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Typography, Box, Avatar, Button, Stack, TextField, Snackbar, Alert } from '@mui/material';
 import SyncIcon from '@mui/icons-material/Sync';
 import TwitterIcon from '@mui/icons-material/Twitter';
+import { useAuth } from '@/context/AuthContext';
 
 export default function EditProfileTab() {
-  const [form, setForm] = useState({
-    username: 'lawrencemkusi',
-    name: 'Lawrence Mkusi',
-    bio: "I've come back for you... to remind you of something. Something you once knew...",
-  });
+  const { currentUser, updateUser } = useAuth();
+  const [form, setForm] = useState({ username: '', name: '', bio: '' });
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      setForm({
+        username: currentUser.username,
+        name: `${currentUser.firstName} ${currentUser.lastName}`.trim(),
+        bio: currentUser.bio,
+      });
+    }
+  }, [currentUser]);
 
   const inputStyles = {
     '& .MuiOutlinedInput-root': {
@@ -21,6 +30,14 @@ export default function EditProfileTab() {
     },
   };
 
+  const handleSave = () => {
+    const [firstName, ...rest] = form.name.trim().split(' ');
+    updateUser({ username: form.username, firstName: firstName || '', lastName: rest.join(' '), bio: form.bio });
+    setSaved(true);
+  };
+
+  if (!currentUser) return null;
+
   return (
     <Box className="max-w-2xl animate-fade-in">
       <Typography variant="h4" className="font-medium text-slate-900 mb-8">
@@ -31,10 +48,13 @@ export default function EditProfileTab() {
         <Avatar 
           className="w-20 h-20"
           sx={{ background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%, #a1c4fd 100%)' }}
-        />
+        >
+          {currentUser.firstName.charAt(0).toUpperCase()}
+        </Avatar>
         <Button 
           startIcon={<SyncIcon />} 
           className="text-blue-600 font-bold normal-case text-sm hover:bg-blue-50 rounded-lg px-4 py-2"
+          disabled
         >
           Change profile photo
         </Button>
@@ -48,7 +68,6 @@ export default function EditProfileTab() {
             onChange={(e) => setForm({...form, username: e.target.value})}
             sx={inputStyles}
           />
-          <Typography className="text-xs font-bold text-green-600 mt-1 ml-1">Available</Typography>
         </Box>
 
         <Box>
@@ -79,6 +98,7 @@ export default function EditProfileTab() {
           <Button 
             startIcon={<TwitterIcon className="text-slate-900" />}
             className="bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold normal-case rounded-full px-6 py-2.5 shadow-none w-max"
+            disabled
           >
             Connect Twitter account
           </Button>
@@ -87,12 +107,19 @@ export default function EditProfileTab() {
         <Box className="pt-4">
           <Button 
             variant="contained" 
+            onClick={handleSave}
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold normal-case rounded-full px-8 py-3 shadow-none w-max"
           >
             Update Profile
           </Button>
         </Box>
       </Stack>
+
+      <Snackbar open={saved} autoHideDuration={2500} onClose={() => setSaved(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert severity="success" variant="filled" sx={{ borderRadius: 3, fontWeight: 'bold' }}>
+          Profile updated!
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

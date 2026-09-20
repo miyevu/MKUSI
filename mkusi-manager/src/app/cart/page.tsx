@@ -2,12 +2,13 @@
 import React, { useState } from 'react';
 import {
   Container, Typography, Box, Button, IconButton, Stack,
-  Radio, RadioGroup, FormControlLabel, Divider, Chip
+  Radio, RadioGroup, Divider, Chip, Skeleton, Grid
 } from '@mui/material';
 
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
+import { useProducts, getDiscountedPrice } from '@/context/ProductContext';
 
 import KeyboardBackspaceRoundedIcon from '@mui/icons-material/KeyboardBackspaceRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
@@ -20,42 +21,85 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
 
-const CART_ITEMS = [
-  {
-    id: 1, name: "15000mAh Solar Power Bank", sku: "#21433254354532",
-    color: "Black", extra: "Fast-Charging Type-C Cable",
-    basePrice: 485.00, extraPrice: 25.00, qty: 1,
-    image: "https://images.unsplash.com/photo-1619441207978-3d326c46e2c9?w=400"
-  },
-  {
-    id: 2, name: "MagSafe Silicone Case", sku: "#21432353246353",
-    color: "Midnight Blue", extra: "Screen Protector",
-    basePrice: 120.00, extraPrice: 30.00, qty: 3,
-    image: "https://images.unsplash.com/photo-1603313011101-320f26a4f6f6?w=400"
-  },
-];
+function CartSkeletonRow() {
+  return (
+    <Box className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center px-6 py-6 border-b border-slate-50 last:border-none">
+      <Box className="col-span-1 md:col-span-5 flex items-center gap-4">
+        <Skeleton variant="rounded" width={72} height={72} sx={{ borderRadius: '16px' }} />
+        <Box className="flex-1">
+          <Skeleton variant="text" width="70%" height={20} />
+          <Skeleton variant="text" width="40%" height={16} />
+        </Box>
+      </Box>
+      <Box className="hidden md:flex col-span-2 justify-center">
+        <Skeleton variant="text" width={50} height={20} />
+      </Box>
+      <Box className="col-span-1 md:col-span-2 flex justify-center">
+        <Skeleton variant="rounded" width={110} height={36} sx={{ borderRadius: '16px' }} />
+      </Box>
+      <Box className="hidden md:flex col-span-2 justify-end">
+        <Skeleton variant="text" width={60} height={20} />
+      </Box>
+      <Box className="hidden md:flex col-span-1 justify-center">
+        <Skeleton variant="circular" width={28} height={28} />
+      </Box>
+    </Box>
+  );
+}
 
 export default function CartPage() {
+  const { cartItems, cartLoading, products, updateCartQty, removeFromCart, storeSettings } = useProducts();
   const [shippingMode, setShippingMode] = useState('pickup');
-  const [cartItems, setCartItems] = useState(CART_ITEMS);
-  const [promoCode, setPromoCode] = useState('');
-  const [promoApplied, setPromoApplied] = useState(false);
 
-  const updateQty = (id: number, delta: number) => {
-    setCartItems(prev =>
-      prev.map(item => item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item)
+  const resolvedItems = cartItems
+    .map(item => {
+      const product = products.find(p => p.id === item.productId);
+      if (!product) return null;
+      const { finalPrice, hasDiscount, originalPrice } = getDiscountedPrice(product);
+      return { ...item, product, unitPrice: finalPrice, hasDiscount, originalPrice };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
+  const subtotal = resolvedItems.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
+  const shippingCost = shippingMode === 'delivery' ? storeSettings.deliveryFee : 0;
+  const finalTotal = subtotal + shippingCost;
+  const totalItems = resolvedItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  if (cartLoading) {
+    return (
+      <main className="bg-[#f8f9fb] min-h-screen flex flex-col w-full font-sans">
+        <Navbar />
+        <Container maxWidth="xl" className="px-4 md:px-8 py-8 md:py-12 flex-1">
+          <Box className="mb-8 md:mb-10">
+            <Skeleton variant="text" width={200} height={44} />
+            <Skeleton variant="text" width={140} height={20} />
+          </Box>
+
+          <Box className="flex flex-col lg:flex-row gap-6 items-start">
+            <Box className="w-full flex-1 min-w-0">
+              <Box className="w-full bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm">
+                <CartSkeletonRow />
+                <CartSkeletonRow />
+                <CartSkeletonRow />
+              </Box>
+            </Box>
+
+            <Box className="w-full lg:w-[360px] shrink-0">
+              <Box className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+                <Skeleton variant="text" width={120} height={24} sx={{ mb: 3 }} />
+                <Skeleton variant="rounded" height={70} sx={{ borderRadius: '16px', mb: 2 }} />
+                <Skeleton variant="rounded" height={70} sx={{ borderRadius: '16px', mb: 3 }} />
+                <Skeleton variant="text" width="100%" height={20} sx={{ mb: 1 }} />
+                <Skeleton variant="text" width="100%" height={20} sx={{ mb: 3 }} />
+                <Skeleton variant="rounded" height={56} sx={{ borderRadius: '16px' }} />
+              </Box>
+            </Box>
+          </Box>
+        </Container>
+        <Footer />
+      </main>
     );
-  };
-
-  const removeItem = (id: number) => {
-    setCartItems(prev => prev.filter(item => item.id !== id));
-  };
-
-  const subtotal = cartItems.reduce((acc, item) => acc + ((item.basePrice + item.extraPrice) * item.qty), 0);
-  const discount = promoApplied ? subtotal * 0.1 : 0;
-  const shippingCost = shippingMode === 'delivery' ? 35.00 : 0;
-  const finalTotal = subtotal - discount + shippingCost;
-  const totalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
+  }
 
   return (
     <main className="bg-[#f8f9fb] min-h-screen flex flex-col w-full font-sans">
@@ -84,7 +128,7 @@ export default function CartPage() {
           </Button>
         </Box>
 
-        {cartItems.length === 0 ? (
+        {resolvedItems.length === 0 ? (
           /* ── Empty State ── */
           <Box className="flex flex-col items-center justify-center py-28 text-center">
             <Box className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-slate-100">
@@ -132,34 +176,36 @@ export default function CartPage() {
                 </Box>
 
                 {/* Items */}
-                {cartItems.map((item, index) => (
+                {resolvedItems.map((item, index) => (
                   <Box
-                    key={item.id}
-                    className={`grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-4 items-center px-6 py-6 transition-colors hover:bg-slate-50/60 ${index < cartItems.length - 1 ? 'border-b border-slate-50' : ''}`}
+                    key={item.productId}
+                    className={`grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-4 items-center px-6 py-6 transition-colors hover:bg-slate-50/60 ${index < resolvedItems.length - 1 ? 'border-b border-slate-50' : ''}`}
                   >
                     {/* Product Info */}
                     <Box className="col-span-1 md:col-span-5 flex items-center gap-4">
                       <Box className="relative shrink-0">
                         <Box className="w-20 h-20 md:w-[72px] md:h-[72px] bg-[#f0f2f5] rounded-2xl overflow-hidden flex items-center justify-center p-2">
                           <img
-                            src={item.image}
-                            alt={item.name}
+                            src={item.product.image || 'https://via.placeholder.com/100'}
+                            alt={item.product.name}
                             className="w-full h-full object-contain mix-blend-multiply"
                           />
                         </Box>
                       </Box>
                       <Box className="flex-1 min-w-0">
                         <Typography className="font-bold text-slate-900 text-sm leading-snug mb-0.5 line-clamp-2">
-                          {item.name}
+                          {item.product.name}
                         </Typography>
                         <Box className="flex flex-wrap gap-1.5 mt-1.5">
+                          {item.hasDiscount && (
+                            <Chip
+                              label="Discounted"
+                              size="small"
+                              className="bg-amber-50 text-amber-700 font-semibold h-5 text-[10px] rounded-md"
+                            />
+                          )}
                           <Chip
-                            label={item.color}
-                            size="small"
-                            className="bg-slate-100 text-slate-500 font-semibold h-5 text-[10px] rounded-md"
-                          />
-                          <Chip
-                            label={item.extra}
+                            label={item.product.category}
                             size="small"
                             className="bg-blue-50 text-blue-500 font-semibold h-5 text-[10px] rounded-md"
                           />
@@ -167,36 +213,41 @@ export default function CartPage() {
                         {/* Mobile: price + total inline */}
                         <Box className="flex items-center justify-between mt-3 md:hidden">
                           <Typography className="text-slate-400 text-xs font-semibold">
-                            ₵{(item.basePrice + item.extraPrice).toFixed(2)} each
+                            ₵{item.unitPrice.toFixed(2)} each
                           </Typography>
                           <Typography className="font-black text-slate-900 text-sm">
-                            ₵{((item.basePrice + item.extraPrice) * item.qty).toFixed(2)}
+                            ₵{(item.unitPrice * item.quantity).toFixed(2)}
                           </Typography>
                         </Box>
                       </Box>
                     </Box>
 
                     {/* Unit Price (desktop) */}
-                    <Box className="hidden md:flex col-span-2 justify-center">
+                    <Box className="hidden md:flex col-span-2 flex-col items-center justify-center">
                       <Typography className="font-semibold text-slate-500 text-sm">
-                        ₵{(item.basePrice + item.extraPrice).toFixed(2)}
+                        ₵{item.unitPrice.toFixed(2)}
                       </Typography>
+                      {item.hasDiscount && (
+                        <Typography className="text-slate-300 line-through text-[11px]">
+                          ₵{item.originalPrice.toFixed(2)}
+                        </Typography>
+                      )}
                     </Box>
 
                     {/* Quantity Controls + Mobile Delete */}
                     <Box className="col-span-1 md:col-span-2 flex items-center justify-between md:justify-center gap-3">
                       <Box className="flex items-center bg-[#f0f2f5] rounded-2xl overflow-hidden">
                         <button
-                          onClick={() => updateQty(item.id, -1)}
+                          onClick={() => updateCartQty(item.productId, -1)}
                           className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 transition-colors font-bold text-lg leading-none cursor-pointer bg-transparent border-none select-none"
                         >
                           −
                         </button>
                         <Typography className="font-black text-slate-900 text-sm w-7 text-center select-none">
-                          {item.qty}
+                          {item.quantity}
                         </Typography>
                         <button
-                          onClick={() => updateQty(item.id, 1)}
+                          onClick={() => updateCartQty(item.productId, 1)}
                           className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 transition-colors font-bold text-lg leading-none cursor-pointer bg-transparent border-none select-none"
                         >
                           +
@@ -204,7 +255,7 @@ export default function CartPage() {
                       </Box>
                       {/* Delete — mobile only, inline with stepper */}
                       <IconButton
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeFromCart(item.productId)}
                         size="small"
                         sx={{ display: { xs: 'inline-flex', md: 'none' } }}
                         className=" text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
@@ -216,14 +267,14 @@ export default function CartPage() {
                     {/* Line Total — desktop only */}
                     <Box className="hidden md:flex col-span-2 justify-end items-center gap-3">
                       <Typography className="font-black text-slate-900 text-sm">
-                        ₵{((item.basePrice + item.extraPrice) * item.qty).toFixed(2)}
+                        ₵{(item.unitPrice * item.quantity).toFixed(2)}
                       </Typography>
                     </Box>
 
                     {/* Delete — desktop only */}
                     <Box className="hidden md:flex col-span-1 items-center justify-center">
                       <IconButton
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeFromCart(item.productId)}
                         size="small"
                         className="text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
                       >
@@ -232,27 +283,6 @@ export default function CartPage() {
                     </Box>
                   </Box>
                 ))}
-              </Box>
-
-              {/* Promo Code */}
-              <Box className="mt-4 bg-white rounded-3xl border border-slate-100 shadow-sm px-6 py-5 flex items-center gap-3">
-                <Box className="flex-1 relative">
-                  <input
-                    type="text"
-                    placeholder="Promo code"
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                    className="w-full bg-[#f0f2f5] rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 placeholder-slate-400 outline-none border-none focus:ring-2 focus:ring-blue-100 tracking-widest"
-                  />
-                </Box>
-                <Button
-                  disableRipple
-                  onClick={() => { if (promoCode) setPromoApplied(true); }}
-                  variant={promoApplied ? 'outlined' : 'contained'}
-                  className={`font-black normal-case rounded-2xl px-6 py-3 shadow-none text-sm shrink-0 ${promoApplied ? 'border-green-200 text-green-600 bg-green-50 hover:bg-green-50' : 'bg-slate-900 hover:bg-blue-600 text-white'}`}
-                >
-                  {promoApplied ? '✓ Applied' : 'Apply'}
-                </Button>
               </Box>
             </Box>
 
@@ -313,7 +343,7 @@ export default function CartPage() {
                           </Typography>
                           <Typography className="text-slate-400 text-[11px] font-medium">2–4 business days</Typography>
                         </Box>
-                        <Typography className="font-black text-slate-900 text-xs">₵35</Typography>
+                        <Typography className="font-black text-slate-900 text-xs">₵{storeSettings.deliveryFee.toFixed(2)}</Typography>
                         <Radio
                           value="delivery"
                           size="small"
@@ -338,17 +368,6 @@ export default function CartPage() {
                         ₵{subtotal.toFixed(2)}
                       </Typography>
                     </Box>
-
-                    {promoApplied && (
-                      <Box className="flex justify-between items-center">
-                        <Typography className="text-green-600 text-sm font-semibold">
-                          Promo ({promoCode})
-                        </Typography>
-                        <Typography className="text-green-600 text-sm font-bold">
-                          −₵{discount.toFixed(2)}
-                        </Typography>
-                      </Box>
-                    )}
 
                     <Box className="flex justify-between items-center">
                       <Typography className="text-slate-500 text-sm font-semibold">Delivery</Typography>

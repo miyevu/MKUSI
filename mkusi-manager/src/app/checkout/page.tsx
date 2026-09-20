@@ -1,47 +1,74 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Container, Typography, TextField, Button, Box, Paper, Stack, Divider, Radio, RadioGroup, FormControlLabel, FormControl, Grid 
+  Container, Typography, TextField, Button, Box, Paper, Stack, Divider, Radio, RadioGroup, FormControlLabel, FormControl, Grid, Alert
 } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import SecurityIcon from '@mui/icons-material/Security';
 import { useRouter } from 'next/navigation';
-import { useProducts } from '@/context/ProductContext';
+import Link from 'next/link';
+import { useProducts, getDiscountedPrice } from '@/context/ProductContext';
+import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
-// MOCK DATA - Replace with actual Cart State later
-const MOCK_CART = [
-  { id: 1, name: "15000mAh Solar Power Bank", price: 510.00, quantity: 1, image: "https://images.unsplash.com/photo-1619441207978-3d326c46e2c9?w=100" },
-  { id: 2, name: "MagSafe Silicone Case", price: 150.00, quantity: 1, image: "https://images.unsplash.com/photo-1603313011101-320f26a4f6f6?w=100" }
-];
-
 export default function CheckoutPage() {
   const router = useRouter();
-  const { addOrder } = useProducts();
-  
+  const { cartItems, products, addOrder, clearCart, storeSettings, validatePromoCode } = useProducts();
+  const { currentUser } = useAuth();
+
+  const resolvedItems = cartItems
+    .map(item => {
+      const product = products.find(p => p.id === item.productId);
+      if (!product) return null;
+      const { finalPrice } = getDiscountedPrice(product);
+      return { ...item, product, unitPrice: finalPrice };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
   const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
+    firstName: currentUser?.firstName || '',
+    lastName: currentUser?.lastName || '',
     phone: '',
-    email: '',
+    email: currentUser?.email || '',
     address: '',
     city: 'Accra'
   });
+
+  useEffect(() => {
+    if (currentUser) {
+      setForm(prev => ({
+        ...prev,
+        firstName: prev.firstName || currentUser.firstName || '',
+        lastName: prev.lastName || currentUser.lastName || '',
+        email: prev.email || currentUser.email || '',
+      }));
+    }
+  }, [currentUser]);
   
-  // NEW: State object to hold error messages for any field
   const [errors, setErrors] = useState({
     phone: '',
     email: '',
   });
   
   const [paymentMethod, setPaymentMethod] = useState('momo');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [submitWarning, setSubmitWarning] = useState('');
 
-  const subtotal = MOCK_CART.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const deliveryFee = 20.00;
-  const totalAmount = subtotal + deliveryFee;
+  const [promoCode, setPromoCode] = useState('');
+  const [promoApplied, setPromoApplied] = useState<{ discountType: 'percent' | 'fixed'; discountValue: number } | null>(null);
+  const [promoError, setPromoError] = useState('');
+  const [validatingPromo, setValidatingPromo] = useState(false);
+
+  const subtotal = resolvedItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+  const promoDiscount = promoApplied
+    ? promoApplied.discountType === 'percent'
+      ? subtotal * (promoApplied.discountValue / 100)
+      : Math.min(promoApplied.discountValue, subtotal)
+    : 0;
+  const totalAmount = subtotal - promoDiscount + storeSettings.deliveryFee;
 
   const validatePhone = (phone: string) => {
     if (phone.length > 0 && phone.length < 10) {
@@ -51,52 +78,96 @@ export default function CheckoutPage() {
   };
 
   const validateEmail = (email: string) => {
-    // Basic email regex pattern
+    if (email.length === 0) return "Email address is required";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (email && !emailRegex.test(email)) {
+    if (!emailRegex.test(email)) {
       return "Please enter a valid email address";
     }
     return "";
   };
 
-  const handlePlaceOrder = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleApplyPromo = async () => {
+    setPromoError('');
+    setValidatingPromo(true);
+    const result = await validatePromoCode(promoCode);
+    setValidatingPromo(false);
 
-    // Check all validations before submitting
+    if (!result.valid) {
+      setPromoError(result.error || 'Invalid code.');
+      setPromoApplied(null);
+      return;
+    }
+
+    setPromoApplied({ discountType: result.discountType!, discountValue: result.discountValue! });
+  };
+
+  const handleRemovePromo = () => {
+    setPromoApplied(null);
+    setPromoCode('');
+    setPromoError('');
+  };
+
+  const handlePlaceOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitError('');
+    setSubmitWarning('');
+
+    if (resolvedItems.length === 0) return;
+
     const phoneError = validatePhone(form.phone);
     const emailError = validateEmail(form.email);
-    
-    // Also enforce that phone can't be empty on submit
     const finalPhoneError = form.phone.length === 0 ? "Phone number is required" : phoneError;
 
     if (finalPhoneError || emailError) {
       setErrors({ phone: finalPhoneError, email: emailError });
-      return; // Stop submission!
+      return;
     }
 
-    // 1. GENERATE THE 8-DIGIT ID HERE
-    const part1 = Math.floor(1000 + Math.random() * 9000); 
-    const part2 = Math.floor(1000 + Math.random() * 9000); 
-    const eightDigitId = `MK-${part1}-${part2}`;
+    setSubmitting(true);
 
-    // 2. Save order to context (we don't need its returned 4-digit ID anymore)
-    addOrder({
+    const result = await addOrder({
       customerName: `${form.firstName} ${form.lastName}`,
+      customerEmail: form.email || currentUser?.email,
       phone: form.phone,
       address: `${form.address}, ${form.city}`,
-      items: MOCK_CART.map(i => `${i.quantity}x ${i.name}`).join(', '), 
-      total: `GH₵ ${totalAmount.toFixed(2)}`
+      lineItems: resolvedItems.map(i => ({ productId: i.productId, quantity: i.quantity })),
+      totalOverride: totalAmount,
+      promoCode: promoApplied ? promoCode : undefined,
     });
 
-    // 3. SECURELY SAVE TO SESSION STORAGE (Hidden from URL)
-    sessionStorage.setItem('mkusi_order_id', eightDigitId);
+    if (!result.success || !result.order) {
+      setSubmitting(false);
+      setSubmitError(result.error || 'Failed to place order. Please try again.');
+      return;
+    }
+
+    if (result.error) {
+      setSubmitWarning(result.error);
+    }
+
+    sessionStorage.setItem('mkusi_order_id', result.order.id);
     sessionStorage.setItem('mkusi_customer_name', form.firstName);
 
-    // 4. ROUTE TO A CLEAN URL
+    if (form.email) {
+      fetch('/api/send-order-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: form.email,
+          customerName: form.firstName,
+          orderId: result.order.id,
+          total: totalAmount.toFixed(2),
+          items: resolvedItems.map(i => `${i.quantity}x ${i.product.name}`).join(', '),
+        }),
+      }).catch(err => console.error('Order confirmation email failed (non-blocking):', err));
+    }
+
+    await clearCart();
+    setSubmitting(false);
+
     router.push(`/checkout/success`);
   };
 
-  // Custom TextField styling
   const textFieldStyles = {
     '& .MuiOutlinedInput-root': {
       borderRadius: '12px',
@@ -104,9 +175,35 @@ export default function CheckoutPage() {
       '& fieldset': { borderColor: '#e2e8f0' },
       '&:hover fieldset': { borderColor: '#cbd5e1' },
       '&.Mui-focused fieldset': { borderColor: '#2563eb', borderWidth: '2px' },
-      '&.Mui-error fieldset': { borderColor: '#ef4444', borderWidth: '2px' }, // Red border on error
+      '&.Mui-error fieldset': { borderColor: '#ef4444', borderWidth: '2px' },
     }
   };
+
+  if (resolvedItems.length === 0) {
+    return (
+      <main className="bg-[#fafafa] min-h-screen">
+        <Navbar />
+        <Container maxWidth="sm" className="py-24 flex flex-col items-center text-center">
+          <Box className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-slate-100">
+            <LockIcon sx={{ fontSize: 32 }} className="text-slate-300" />
+          </Box>
+          <Typography className="font-black text-slate-900 text-2xl mb-2">Your cart is empty</Typography>
+          <Typography className="text-slate-400 text-sm mb-8 max-w-xs">
+            Add something to your cart before checking out.
+          </Typography>
+          <Button
+            component={Link}
+            href="/shop"
+            variant="contained"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold normal-case rounded-2xl px-8 py-3 shadow-none text-sm"
+          >
+            Browse Products
+          </Button>
+        </Container>
+        <Footer />
+      </main>
+    );
+  }
 
   return (
     <main className="bg-[#fafafa] min-h-screen">
@@ -119,7 +216,7 @@ export default function CheckoutPage() {
             <LockIcon />
           </Box>
           <Box>
-            <Typography variant="h4" className="font-black text-slate-900 tracking-tight leading-none mb-1">
+            <Typography variant="h4" className="font-black text-slate-900 tracking-tight leading-none mb-1" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
               Secure Checkout
             </Typography>
             <Typography className="text-slate-500 font-medium">
@@ -158,7 +255,6 @@ export default function CheckoutPage() {
                         />
                       </Grid>
                       
-                      {/* UPDATED PHONE FIELD */}
                       <Grid size={{ xs: 12, sm: 6 }}>
                         <TextField 
                           fullWidth 
@@ -174,7 +270,6 @@ export default function CheckoutPage() {
                             const onlyNums = e.target.value.replace(/\D/g, '');
                             if (onlyNums.length <= 10) {
                               setForm({...form, phone: onlyNums});
-                              // Clear error dynamically as they type
                               if (errors.phone && onlyNums.length === 10) {
                                 setErrors({ ...errors, phone: '' });
                               }
@@ -192,20 +287,19 @@ export default function CheckoutPage() {
                         />
                       </Grid>
                       
-                      {/* UPDATED EMAIL FIELD */}
                       <Grid size={{ xs: 12, sm: 6 }}>
                         <TextField 
                           fullWidth 
                           label="Email Address" 
                           variant="outlined" 
                           type="email"
-                          placeholder="Optional for receipts"
+                          required
+                          placeholder="you@example.com"
                           value={form.email} 
                           error={!!errors.email}
                           helperText={errors.email}
                           onChange={(e) => {
                             setForm({...form, email: e.target.value});
-                            // Clear error dynamically if they start fixing it
                             if (errors.email) setErrors({ ...errors, email: '' });
                           }}
                           onBlur={() => {
@@ -281,10 +375,9 @@ export default function CheckoutPage() {
 
             {/* RIGHT SIDE: Order Summary */}
             <Grid size={{ xs: 12, md: 5 }}>
-              <Box className="sticky top-28">
+              <Box className="lg:sticky lg:top-28">
                 <Paper elevation={0} className="p-6 md:p-8 rounded-[2rem] border border-slate-200 mb-6 shadow-sm bg-white overflow-hidden relative">
                   
-                  {/* Background Decoration */}
                   <Box className="absolute -top-10 -right-10 w-32 h-32 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none" />
 
                   <Typography variant="h6" className="font-black mb-6 text-slate-900 relative">
@@ -293,25 +386,62 @@ export default function CheckoutPage() {
                   
                   {/* Cart Items List */}
                   <Stack spacing={3} className="mb-6">
-                    {MOCK_CART.map((item) => (
-                      <Stack key={item.id} direction="row" spacing={2} alignItems="center">
+                    {resolvedItems.map((item) => (
+                      <Stack key={item.productId} direction="row" spacing={2} alignItems="center">
                         <Box className="relative">
                           <Box className="w-16 h-16 bg-slate-50 rounded-xl overflow-hidden border border-slate-100">
-                            <img src={item.image} alt={item.name} className="w-full h-full object-cover mix-blend-multiply" />
+                            <img src={item.product.image || 'https://via.placeholder.com/100'} alt={item.product.name} className="w-full h-full object-cover mix-blend-multiply" />
                           </Box>
                           <Box className="absolute -top-2 -right-2 bg-slate-900 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm">
                             {item.quantity}
                           </Box>
                         </Box>
                         <Box className="flex-1">
-                          <Typography className="font-bold text-sm text-slate-900 line-clamp-1">{item.name}</Typography>
+                          <Typography className="font-bold text-sm text-slate-900 line-clamp-1">{item.product.name}</Typography>
                         </Box>
                         <Typography className="font-bold text-sm text-slate-900">
-                          ₵{(item.price * item.quantity).toFixed(2)}
+                          ₵{(item.unitPrice * item.quantity).toFixed(2)}
                         </Typography>
                       </Stack>
                     ))}
                   </Stack>
+
+                  {/* Promo Code */}
+                  <Box className="mb-6">
+                    {!promoApplied ? (
+                      <Stack direction="row" spacing={1}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          placeholder="Promo code"
+                          value={promoCode}
+                          onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApplyPromo(); } }}
+                          sx={textFieldStyles}
+                        />
+                        <Button
+                          onClick={handleApplyPromo}
+                          disabled={!promoCode || validatingPromo}
+                          variant="outlined"
+                          className="border-slate-300 text-slate-700 font-bold normal-case rounded-xl px-5 shrink-0"
+                        >
+                          {validatingPromo ? 'Checking...' : 'Apply'}
+                        </Button>
+                      </Stack>
+                    ) : (
+                      <Box className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
+                        <Typography className="text-green-700 font-bold text-sm">
+                          ✓ {promoCode} applied
+                        </Typography>
+                        <Button onClick={handleRemovePromo} className="text-green-700 font-bold normal-case text-xs px-2 min-w-0">
+                          Remove
+                        </Button>
+                      </Box>
+                    )}
+                    {promoError && (
+                      <Typography className="text-red-500 text-xs font-semibold mt-1.5">{promoError}</Typography>
+                    )}
+                  </Box>
 
                   <Divider className="mb-6 border-dashed border-slate-200" />
 
@@ -321,11 +451,17 @@ export default function CheckoutPage() {
                       <Typography className="font-bold text-sm">Subtotal</Typography>
                       <Typography className="font-bold text-sm">₵{subtotal.toFixed(2)}</Typography>
                     </Box>
+                    {promoApplied && (
+                      <Box className="flex justify-between items-center text-green-600">
+                        <Typography className="font-bold text-sm">Promo discount</Typography>
+                        <Typography className="font-bold text-sm">−₵{promoDiscount.toFixed(2)}</Typography>
+                      </Box>
+                    )}
                     <Box className="flex justify-between items-center text-slate-500">
                       <Typography className="font-bold text-sm flex items-center gap-1">
                         Delivery 
                       </Typography>
-                      <Typography className="font-bold text-sm text-green-600">₵{deliveryFee.toFixed(2)}</Typography>
+                      <Typography className="font-bold text-sm text-green-600">₵{storeSettings.deliveryFee.toFixed(2)}</Typography>
                     </Box>
                   </Stack>
               
@@ -338,15 +474,28 @@ export default function CheckoutPage() {
                     </Typography>
                   </Box>
 
+                  {submitWarning && (
+                    <Alert severity="warning" sx={{ borderRadius: 2, mb: 3, fontWeight: 600, fontSize: '0.8rem' }}>
+                      {submitWarning}
+                    </Alert>
+                  )}
+
+                  {submitError && (
+                    <Alert severity="error" sx={{ borderRadius: 2, mb: 3, fontWeight: 600 }}>
+                      {submitError}
+                    </Alert>
+                  )}
+
                   {/* Submit Action */}
                   <Button 
                     type="submit"
                     variant="contained" 
                     fullWidth 
+                    disabled={submitting}
                     className="bg-[#1e293b] hover:bg-blue-600 py-4 rounded-2xl normal-case text-lg font-black shadow-none transition-all duration-300 text-white"
                     startIcon={<AccountBalanceWalletIcon />}
                   >
-                    Confirm & Place Order
+                    {submitting ? 'Placing Order...' : 'Confirm & Place Order'}
                   </Button>
                   
                   <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" className="mt-4">

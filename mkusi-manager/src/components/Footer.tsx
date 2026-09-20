@@ -1,6 +1,6 @@
 'use client';
-import React from 'react';
-import { Container, Grid, Typography, Box, Stack, TextField, Button, IconButton, Divider } from '@mui/material';
+import React, { useState } from 'react';
+import { Container, Grid, Typography, Box, Stack, TextField, Button, IconButton, Divider, Alert, Snackbar, CircularProgress } from '@mui/material';
 import Link from 'next/link';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import TwitterIcon from '@mui/icons-material/Twitter';
@@ -10,63 +10,107 @@ import SendIcon from '@mui/icons-material/Send';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PhoneIcon from '@mui/icons-material/Phone';
 import EmailIcon from '@mui/icons-material/Email';
+import { supabase } from '@/lib/supabase';
 
 export default function Footer() {
+  const [email, setEmail] = useState('');
+  const [subscribing, setSubscribing] = useState(false);
+  const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  const handleSubscribe = async () => {
+    const trimmed = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(trimmed)) {
+      setToast({ open: true, message: 'Please enter a valid email address.', severity: 'error' });
+      return;
+    }
+
+    setSubscribing(true);
+    const { error } = await supabase.from('newsletter_subscribers').insert([{ email: trimmed }]);
+    setSubscribing(false);
+
+    if (error) {
+      if (error.code === '23505') {
+        setToast({ open: true, message: "You're already subscribed!", severity: 'error' });
+      } else {
+        setToast({ open: true, message: 'Something went wrong. Please try again.', severity: 'error' });
+      }
+      return;
+    }
+
+    setEmail('');
+    setToast({ open: true, message: "You're subscribed! Thanks for joining MKUSI.", severity: 'success' });
+  };
+
+  const socials = [
+    { icon: <InstagramIcon />, url: null as string | null },
+    { icon: <TwitterIcon />, url: null as string | null },
+    { icon: <FacebookIcon />, url: null as string | null },
+    { icon: <WhatsAppIcon />, url: 'https://wa.me/233543391481?text=Hi%20I%20want%20to%20make%20enquiries%20on%20' },
+  ];
+
+  const activeSocials = socials.filter((social) => social.url !== null);
+
   return (
     <Box className="bg-[#0f172a] text-slate-300 pt-16 pb-10 mt-20 relative overflow-hidden">
-
       <Container maxWidth="xl" className="relative z-10">
-        
+
         {/* NEWSLETTER SECTION */}
-        <Box className="bg-blue-600 rounded-[2rem] p-10 md:p-16 mb-20 relative overflow-hidden shadow-2xl shadow-blue-900/50">  
-          {/* 1. The Content Grid (Pushed to the front with relative z-10) */}
+        <Box className="bg-blue-600 rounded-[2rem] p-10 md:p-16 mb-20 relative overflow-hidden shadow-2xl shadow-blue-900/50">
           <Grid container alignItems="center" spacing={4} className="relative z-10">
-            
-            {/* Text Section */}
             <Grid size={{ xs: 12, md: 6 }}>
               <Typography variant="h3" className="font-black text-white mb-4">
                 Stay in the loop.
               </Typography>
               <Typography className="text-blue-100 text-lg max-w-md">
-                Join 15,000+ tech lovers. Get exclusive offers and first access to new drops.
+                Join our list for exclusive offers and first access to new drops.
               </Typography>
             </Grid>
-            
-            {/* Input Section */}
+
             <Grid size={{ xs: 12, md: 6 }}>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField 
-                  fullWidth 
+                <TextField
+                  fullWidth
                   placeholder="Enter your email address"
                   variant="outlined"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSubscribe();
+                  }}
                   className="bg-white/10 rounded-xl backdrop-blur-sm"
-                  sx={{ 
-                    input: { color: 'white' }, 
-                    '& .MuiOutlinedInput-notchedOutline': { border: 'none' } 
+                  sx={{
+                    input: { color: 'white' },
+                    '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
                   }}
                 />
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   size="large"
-                  endIcon={<SendIcon />}
+                  onClick={handleSubscribe}
+                  disabled={subscribing}
+                  endIcon={subscribing ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
                   className="bg-white text-blue-600 font-black py-4 px-8 rounded-xl hover:bg-blue-50 whitespace-nowrap"
                 >
-                  Subscribe
+                  {subscribing ? 'Joining...' : 'Subscribe'}
                 </Button>
               </Stack>
             </Grid>
           </Grid>
-          
-          {/* 2. Abstract Circle Decoration (Pushed to the back with z-0 pointer-events-none) */}
+
           <Box className="absolute -right-20 -bottom-40 w-80 h-80 border-[20px] border-white/10 rounded-full z-0 pointer-events-none" />
         </Box>
 
-
         {/* MAIN FOOTER LINKS */}
         <Grid container spacing={8}>
-          
+
           {/* Brand Column */}
-          <Grid size={{ xs: 12, md:4 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Box className="mb-4 flex items-center gap-2">
               <Box className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-black text-white">M</Box>
               <Typography variant="h5" className="font-black text-white tracking-tight">MKUSI</Typography>
@@ -75,20 +119,12 @@ export default function Footer() {
               We craft premium accessories for the modern nomad. Designed in Accra, built for the world. Quality you can feel, speed you can trust.
             </Typography>
             <Stack direction="row" spacing={2}>
-              {[
-                { icon: <InstagramIcon />, url: "https://instagram.com/yourprofile" },
-                { icon: <TwitterIcon />, url: "https://twitter.com/yourprofile" },
-                { icon: <FacebookIcon />, url: "https://facebook.com/yourprofile" },
-                { 
-                  icon: <WhatsAppIcon />, 
-                  url: "https://wa.me/233543391481?text=Hi%20I%20want%20to%20make%20enquiries%20on%20" 
-                },
-              ].map((social, i) => (
-                <IconButton 
-                  key={i} 
-                  component="a" 
-                  href={social.url} 
-                  target="_blank" 
+              {activeSocials.map((social, i) => (
+                <IconButton
+                  key={i}
+                  component="a"
+                  href={social.url as string}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="bg-slate-800 hover:bg-blue-600 hover:scale-110 transition-all duration-300 rounded-xl"
                   sx={{ color: 'whitesmoke' }}
@@ -99,27 +135,31 @@ export default function Footer() {
             </Stack>
           </Grid>
 
-          {/* Links Column 1 */}
+          {/* Shop Column */}
           <Grid size={{ xs: 6, sm: 4, md: 2 }}>
             <Typography className="font-bold text-white mb-6 uppercase tracking-wider text-sm pb-2">Shop</Typography>
             <Stack spacing={2}>
-              {['All Products', 'New Arrivals', 'Best Sellers', 'Flash Sales', 'Gift Cards'].map(item => (
-                <Link key={item} href="#" className="no-underline text-slate-400 hover:text-white transition-colors text-sm">
-                  {item}
-                </Link>
-              ))}
+              <Link href="/shop" className="no-underline text-slate-400 hover:text-white transition-colors text-sm">
+                All Products
+              </Link>
             </Stack>
           </Grid>
 
-          {/* Links Column 2 */}
+          {/* Support Column */}
           <Grid size={{ xs: 6, sm: 4, md: 2 }}>
             <Typography className="font-bold text-white mb-6 uppercase tracking-wider text-sm pb-2">Support</Typography>
             <Stack spacing={2}>
-              {['Help Center', 'Shipping Info', 'Returns & Exchange', 'Warranty', 'Contact Us'].map(item => (
-                <Link key={item} href="#" className="no-underline text-slate-400 hover:text-white transition-colors text-sm">
-                  {item}
-                </Link>
-              ))}
+              <a
+                href="https://wa.me/233543391481?text=Hi%20I%20need%20help%20with%20"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="no-underline text-slate-400 hover:text-white transition-colors text-sm"
+              >
+                Contact Us
+              </a>
+              <Link href="/track-order" className="no-underline text-slate-400 hover:text-white transition-colors text-sm">
+                Track Order
+              </Link>
             </Stack>
           </Grid>
 
@@ -130,12 +170,12 @@ export default function Footer() {
               <Box className="flex gap-3">
                 <LocationOnIcon className="text-blue-500" />
                 <Typography className="text-sm text-slate-400">
-                  MKUSI HQ, East Legon,<br/>Accra, Ghana
+                  MKUSI HQ, East Legon,<br />Accra, Ghana
                 </Typography>
               </Box>
               <Box className="flex gap-3">
                 <PhoneIcon className="text-blue-500" />
-                <Typography className="text-sm text-slate-400">+233 54 123 4567</Typography>
+                <Typography className="text-sm text-slate-400">+233 54 339 1481</Typography>
               </Box>
               <Box className="flex gap-3">
                 <EmailIcon className="text-blue-500" />
@@ -153,17 +193,20 @@ export default function Footer() {
           <Typography className="text-xs text-slate-500">
             © 2026 MKUSI Inc. All rights reserved.
           </Typography>
-          
-          <Stack direction="row" spacing={4}>
-            {['Privacy Policy', 'Terms of Service', 'Cookies'].map(text => (
-              <Link key={text} href="#" className="no-underline text-xs text-slate-500 hover:text-white">
-                {text}
-              </Link>
-            ))}
-          </Stack>
         </Stack>
-        
+
       </Container>
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={3000}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert severity={toast.severity} variant="filled" sx={{ borderRadius: 3, fontWeight: 'bold' }}>
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

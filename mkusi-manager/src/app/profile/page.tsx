@@ -1,10 +1,11 @@
 'use client';
-import React, { useState } from 'react';
-import { Container, Grid } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Container, Grid, Box } from '@mui/material';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/context/AuthContext';
 
-// Import your separated components
 import ProfileSidebar from '@/components/profile/ProfileSidebar';
 import EditProfileTab from '@/components/profile/tabs/EditProfileTab';
 import OrdersTab from '@/components/profile/tabs/OrdersTab';
@@ -13,16 +14,21 @@ import AccountTab from '@/components/profile/tabs/AccountTab';
 import WalletsTab from '@/components/profile/tabs/WalletsTab';
 
 export default function ProfilePage() {
-  // State to track which tab is currently selected in the sidebar
+  const { currentUser } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('edit_profile');
+  const [checked, setChecked] = useState(false);
 
-  // DEBUGGING: This will print to your terminal. 
-  // Look for any component that says "undefined" or "{}" instead of "[Function: ComponentName]"
-  console.log("Checking Imports:", { 
-    ProfileSidebar, EditProfileTab, OrdersTab, WishlistTab, AccountTab, WalletsTab 
-  });
+  useEffect(() => {
+    if (!currentUser) {
+      router.push('/auth');
+    } else if (currentUser.isAdmin) {
+      router.push('/admin'); // admins don't have a customer profile
+    } else {
+      setChecked(true);
+    }
+  }, [currentUser, router]);
 
-  // Function to render the correct component based on the active tab
   const renderContent = () => {
     switch (activeTab) {
       case 'edit_profile': return <EditProfileTab />;
@@ -34,26 +40,22 @@ export default function ProfilePage() {
     }
   };
 
+  if (!checked) return null;
+
   return (
     <main className="bg-white min-h-screen flex flex-col">
       <Navbar />
-      
-      {/* <Container maxWidth="xl" className="py-12 sm:py-0 px-4 md:px-8 flex-1"> */}
-      <Container maxWidth="xl" className="py-10 md:py-14 lg:py-12 px-8 md:px-8 flex-1">
-        <Grid container spacing={{ xs: 6, md: 10 }} >
-          
-          {/* LEFT SIDEBAR NAVIGATION */}
+      <Container maxWidth="xl" className="py-10 md:py-14 lg:py-12 px-4 sm:px-6 md:px-8 flex-1">
+        <Grid container spacing={{ xs: 6, md: 10 }}>
           <Grid size={{ xs: 12, md: 3 }}>
             <ProfileSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           </Grid>
-
-          {/* RIGHT MAIN CONTENT */}
           <Grid size={{ xs: 12, md: 9 }}>
             {renderContent()}
           </Grid>
-
         </Grid>
       </Container>
+      <Footer />
     </main>
   );
 }
