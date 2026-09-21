@@ -26,11 +26,18 @@ interface FeatureItem { icon: React.ElementType; title: string; desc: string; }
 interface BentoItem { subtitle: string; title: React.ReactNode; btnText: string; btnVariant: "text" | "contained" | "outlined"; btnClass: string; imgSrc: string; imgAlt: string; imgClass: string; textWrapperClass?: string; justify: string; link: string; }
 
 // --- DATA CONSTANTS ---
+// const CATEGORIES: CategoryItem[] = [
+//   { name: 'Phone Cases', icon: <PhoneIphoneIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?auto=format&fit=crop&w=200&q=60' },
+//   { name: 'Chargers', icon: <BatteryChargingFullIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1616348436168-de43ad0db179?auto=format&fit=crop&w=200&q=60' },
+//   { name: 'Cables', icon: <CableIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?auto=format&fit=crop&w=200&q=60' },
+//   { name: 'Screen Protectors', icon: <LocalShippingIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=200&q=60' },
+//   { name: 'Audio', icon: <HeadphonesIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=60' },
+// ];
 const CATEGORIES: CategoryItem[] = [
   { name: 'Phone Cases', icon: <PhoneIphoneIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?auto=format&fit=crop&w=200&q=60' },
-  { name: 'Chargers', icon: <BatteryChargingFullIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1616348436168-de43ad0db179?auto=format&fit=crop&w=200&q=60' },
-  { name: 'Cables', icon: <CableIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?auto=format&fit=crop&w=200&q=60' },
-  { name: 'Screen Protectors', icon: <LocalShippingIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=200&q=60' },
+  { name: 'Chargers', icon: <BatteryChargingFullIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=200&q=60' },
+  { name: 'Cables', icon: <CableIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1603539444875-76e7684265f6?auto=format&fit=crop&w=200&q=60' },
+  { name: 'Screen Protectors', icon: <LocalShippingIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1537145605632-2fa0f95316b0?auto=format&fit=crop&w=200&q=60' },
   { name: 'Audio', icon: <HeadphonesIcon fontSize="large" />, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=60' },
 ];
 
@@ -43,7 +50,7 @@ const FEATURES: FeatureItem[] = [
 const BENTO_ITEMS: BentoItem[] = [
   { subtitle: "Something new", title: <Typography variant="h4" className="font-black text-slate-900 mb-6 leading-none">Cases for<br/>Phone</Typography>, btnText: "TO SHOP", btnVariant: "contained", btnClass: "bg-blue-600 shadow-none font-bold rounded-lg px-8 py-3 text-xs text-white", imgSrc: "https://images.unsplash.com/photo-1603313011101-320f26a4f6f6?auto=format&fit=crop&w=600&q=80", imgAlt: "Red Case", imgClass: "absolute right-[-20px] bottom-[-20px] w-[280px] h-[280px] object-cover rounded-xl rotate-12 drop-shadow-xl z-0", justify: "justify-between", link: "/shop?cat=Phone Cases" },
   { subtitle: "Charge Faster", title: <Typography variant="h4" className="font-black text-slate-900 mb-6 leading-none">Chargers &<br/>Power Banks</Typography>, btnText: "TO SHOP", btnVariant: "outlined", btnClass: "border-slate-300 text-slate-900 font-bold rounded-lg px-8 py-3 text-xs hover:bg-slate-900 hover:text-white hover:border-slate-900", imgSrc: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&w=600&q=80", imgAlt: "Charger", imgClass: "absolute right-[-20px] bottom-[-20px] w-[280px] h-[280px] object-cover rounded-xl rotate-12 drop-shadow-xl z-0", justify: "justify-between", link: "/shop?cat=Chargers" },
-  { subtitle: "Special Offer", title: ( <><Typography variant="h5" className="font-black text-slate-900 mb-1 leading-tight">Buy One and Get<br/>50% Off</Typography><Typography variant="h5" className="font-black text-slate-900 mb-6 leading-tight">the Second</Typography></> ), btnText: "READ MORE", btnVariant: "outlined", btnClass: "border-slate-300 text-slate-900 font-bold rounded-lg px-8 py-3 text-xs hover:bg-slate-900 hover:text-white hover:border-slate-900", imgSrc: "https://images.unsplash.com/photo-1578319439584-104c94d37305?auto=format&fit=crop&w=600&q=80", imgAlt: "Power Bank", imgClass: "absolute right-[-20px] bottom-[-20px] w-[280px] h-[280px] object-cover rounded-xl rotate-12 drop-shadow-xl z-0", textWrapperClass: "max-w-[60%]", justify: "justify-between", link: "/shop" },
+  { subtitle: "Special Offer", title: ( <><Typography variant="h5" className="font-black text-slate-900 mb-1 leading-tight">Buy One and Get<br/>5% Off</Typography><Typography variant="h5" className="font-black text-slate-900 mb-6 leading-tight">the Second</Typography></> ), btnText: "READ MORE", btnVariant: "outlined", btnClass: "border-slate-300 text-slate-900 font-bold rounded-lg px-8 py-3 text-xs hover:bg-slate-900 hover:text-white hover:border-slate-900", imgSrc: "https://images.unsplash.com/photo-1578319439584-104c94d37305?auto=format&fit=crop&w=600&q=80", imgAlt: "Power Bank", imgClass: "absolute right-[-20px] bottom-[-20px] w-[280px] h-[280px] object-cover rounded-xl rotate-12 drop-shadow-xl z-0", textWrapperClass: "max-w-[60%]", justify: "justify-between", link: "/shop" },
   { subtitle: "Try something new", title: <Typography variant="h4" className="font-black text-slate-900 mb-6 leading-none">Audio<br/>Gear</Typography>, btnText: "BUY NOW", btnVariant: "contained", btnClass: "bg-blue-600 shadow-none font-bold rounded-lg px-8 py-3 text-xs text-white", imgSrc: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80", imgAlt: "Audio", imgClass: "absolute right-[-20px] bottom-[-20px] w-[280px] h-[280px] object-cover rounded-xl rotate-12 drop-shadow-xl z-0", justify: "justify-between", link: "/shop?cat=Audio" }
 ];
 
@@ -134,8 +141,17 @@ export default function HomePage() {
                 <motion.div variants={itemVariants}>
                   <Link href={`/shop?cat=${encodeURIComponent(cat.name)}`} className="no-underline group">
                     <Stack alignItems="center" spacing={2} className="cursor-pointer">
-                      <Avatar className="w-24 h-24 bg-slate-50 text-slate-400 group-hover:shadow-xl transition-all duration-300 border border-transparent group-hover:border-slate-100 overflow-hidden" sx={{ width: 96, height: 96 }}>
+                      {/* <Avatar className="w-24 h-24 bg-slate-50 text-slate-400 group-hover:shadow-xl transition-all duration-300 border border-transparent group-hover:border-slate-100 overflow-hidden" sx={{ width: 96, height: 96 }}>
                         <img src={cat.image} alt={cat.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" />
+                      </Avatar> */}
+                      <Avatar className="w-24 h-24 bg-slate-50 text-slate-400 group-hover:shadow-xl transition-all duration-300 border border-transparent group-hover:border-slate-100 overflow-hidden" sx={{ width: 96, height: 96 }}>
+                        {cat.image ? (
+                          <img src={cat.image} alt={cat.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" />
+                        ) : (
+                          <Box className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 group-hover:text-blue-600 transition-colors">
+                            {cat.icon}
+                          </Box>
+                        )}
                       </Avatar>
                       <Typography className="font-bold text-slate-700 group-hover:text-blue-600 transition-colors text-center text-sm">{cat.name}</Typography>
                     </Stack>
